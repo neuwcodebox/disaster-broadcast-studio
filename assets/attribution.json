@@ -1,0 +1,71 @@
+[
+  {
+    "id": "kr-boundaries",
+    "title": "대한민국 행정동 경계 (2026-07-01)",
+    "creator": "통계청 통계지리정보서비스(SGIS); 가공: vuski/admdongkor",
+    "sources": [
+      "https://sgis.kostat.go.kr",
+      "https://github.com/vuski/admdongkor/tree/master/ver20260701"
+    ],
+    "licenses": [
+      {
+        "name": "공공누리 제1유형",
+        "url": "https://www.kogl.or.kr/info/licenseType1.do"
+      },
+      {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      }
+    ],
+    "changes": "원본 경계를 시군구·시도로 병합하고 영상 지도에 맞춰 색상과 표시 범위를 구성했습니다. 경계 좌표를 단순화하지 않았습니다.",
+    "notice": "본 데이터는 통계청 통계지리정보서비스(SGIS, https://sgis.kostat.go.kr)에서 공공누리 제1유형으로 개방한 행정동 경계를 가공한 것이며(가공: vuski/admdongkor, https://github.com/vuski/admdongkor), CC BY 4.0으로 배포됩니다."
+  },
+  {
+    "id": "prk-boundaries",
+    "title": "Democratic People's Republic of Korea administrative boundary (2018)",
+    "creator": "World Food Programme (WFP), OCHA Regional Office for Asia and the Pacific; 배포: geoBoundaries",
+    "sources": [
+      "https://data.humdata.org/dataset/dpr-korea-administrative-boundaries",
+      "https://github.com/wmgeolab/geoBoundaries/tree/9469f09/releaseData/gbOpen/PRK/ADM0"
+    ],
+    "licenses": [
+      {
+        "name": "CC BY 3.0 IGO",
+        "url": "https://creativecommons.org/licenses/by/3.0/igo/"
+      }
+    ],
+    "changes": "경계 좌표를 유지하고 표시용 속성·색상을 정리하여 영상 지도로 구성했습니다."
+  },
+  {
+    "id": "natural-earth",
+    "title": "Natural Earth 1:10m Admin 0 — Countries, version 5.1.2",
+    "creator": "Natural Earth contributors",
+    "sources": [
+      "https://github.com/nvkelso/natural-earth-vector/blob/v5.1.2/geojson/ne_10m_admin_0_countries.geojson"
+    ],
+    "licenses": [
+      {
+        "name": "Public domain",
+        "url": "https://www.naturalearthdata.com/about/terms-of-use/"
+      }
+    ],
+    "changes": "동아시아 주변국의 경계 좌표를 유지하고 영상 지도에 맞춰 속성·색상을 구성했습니다."
+  },
+  {
+    "id": "ibm-plex",
+    "title": "IBM Plex Sans KR / IBM Plex Mono",
+    "creator": "IBM Corp. / IBM Plex contributors",
+    "sources": [
+      "https://github.com/IBM/plex",
+      "https://fontsource.org/fonts/ibm-plex-sans-kr",
+      "https://fontsource.org/fonts/ibm-plex-mono"
+    ],
+    "licenses": [
+      {
+        "name": "SIL Open Font License 1.1",
+        "url": "https://github.com/IBM/plex/blob/master/LICENSE.txt"
+      }
+    ],
+    "changes": "공식 Fontsource 배포본의 글꼴을 변경 없이 오프라인 영상 본문·시각 표시에 사용했습니다."
+  }
+]

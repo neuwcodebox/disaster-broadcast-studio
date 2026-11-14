@@ -1,52 +1,243 @@
-import {test} from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {scenarioSchema,compile,pages} from '../src/scenario.js';
-import {stateAt,envelope} from '../src/timeline.js';
-import {loadScenario} from '../src/load.js';
-const input=()=>({version:1,title:'계약 검증',fictionNotice:'기술 검증용 허구 화면입니다.',agencies:{city:'시험시',news:'시험 뉴스'},map:{camera:{center:[127.5,36],zoom:6}},cuts:[{id:'first',duration:10,storyTime:'2026-01-01T12:00:00+09:00'},{id:'second',duration:10,storyTime:'2026-01-01T14:00:00+09:00'}],events:[{id:'a',type:'alert',cut:'first',at:2,sender:'city',text:'첫 안내',regions:['47190']},{id:'b',type:'alert',cut:'second',at:1,sender:'city',text:'정정 안내',corrects:'a'}]});
-const timeline=()=>compile(scenarioSchema.parse(input()),new Set(['47190']));
-test('cut interiors use real time; explicit cuts jump; seeking restores history',()=>{
- const t=timeline();assert.ok(Math.abs(stateAt(t,599).epoch-stateAt(t,0).epoch-599/60*1000)<0.001);
- assert.equal(stateAt(t,600).epoch,Date.parse('2026-01-01T14:00:00+09:00'));
- assert.deepEqual(stateAt(t,670).alerts.map(e=>e.id),['b','a']);
- const expected=stateAt(t,670);for(let f=0;f<670;f++)stateAt(t,f);assert.deepEqual(stateAt(t,670),expected);
+import { scenarioSchema, compile, pages, alertText } from '../src/scenario.js';
+import { stateAt, envelope } from '../src/timeline.js';
+import { makeCredits } from '../src/credits.js';
+import { loadScenario } from '../src/load.js';
+const input = () => ({
+  version: 1,
+  title: '계약 검증',
+  fictionNotice: '기술 검증용 허구 화면입니다.',
+  agencies: { city: '시험시', news: '시험 뉴스' },
+  map: { camera: { center: [127.5, 36], zoom: 6 } },
+  cuts: [
+    { id: 'first', duration: 10, storyTime: '2026-01-01T12:00:00+09:00' },
+    { id: 'second', duration: 10, storyTime: '2026-01-01T14:00:00+09:00' },
+  ],
+  events: [
+    {
+      id: 'a',
+      type: 'alert',
+      cut: 'first',
+      at: 2,
+      sender: 'city',
+      text: '첫 안내',
+      regions: ['47190'],
+    },
+    {
+      id: 'b',
+      type: 'alert',
+      cut: 'second',
+      at: 1,
+      sender: 'city',
+      text: '정정 안내',
+      corrects: 'a',
+    },
+  ],
 });
-test('reference errors identify offending event and field',()=>{
- const x=input();x.events[0].regions=['missing'];assert.throws(()=>compile(scenarioSchema.parse(x),new Set()),/events\[0\].*regions.*missing/);
+const timeline = () => compile(scenarioSchema.parse(input()), new Set(['47190']));
+test('cut interiors use real time; explicit cuts jump; seeking restores history', () => {
+  const t = timeline();
+  assert.ok(Math.abs(stateAt(t, 599).epoch - stateAt(t, 0).epoch - (599 / 60) * 1000) < 0.001);
+  assert.equal(stateAt(t, 600).epoch, Date.parse('2026-01-01T14:00:00+09:00'));
+  assert.deepEqual(
+    stateAt(t, 670).alerts.map((e) => e.id),
+    ['b', 'a'],
+  );
+  const expected = stateAt(t, 670);
+  for (let f = 0; f < 670; f++) stateAt(t, f);
+  assert.deepEqual(stateAt(t, 670), expected);
 });
-test('conflicting single-owner tracks are rejected; independent layers can overlap',()=>{
- const x:any=input();x.events.push(...['n1','n2'].map(id=>({id,type:'news',cut:'first',at:0,duration:4,source:'news',headline:'검증용 제목'})));
- assert.throws(()=>compile(scenarioSchema.parse(x),new Set(['47190'])),/overlapping news/);
- x.events.pop();x.events.push({id:'m',type:'marker',cut:'first',at:0,duration:4,position:[127,36],label:'검증'});assert.doesNotThrow(()=>compile(scenarioSchema.parse(x),new Set(['47190'])));
+test('reference errors identify offending event and field', () => {
+  const x = input();
+  x.events[0].regions = ['missing'];
+  assert.throws(() => compile(scenarioSchema.parse(x), new Set()), /events\[0\].*regions.*missing/);
 });
-test('cut crossing is explicit and audio envelope is frame based',()=>{
- const x:any=input();x.events.push({id:'silence',type:'silence',cut:'first',at:9,duration:2});
- assert.throws(()=>compile(scenarioSchema.parse(x),new Set(['47190'])),/carry/);
- x.events.at(-1).carry=true;const t=compile(scenarioSchema.parse(x),new Set(['47190']));assert.ok(stateAt(t,620).visible.some(e=>e.id==='silence'));
- assert.equal(envelope(0,0,120,1,0),0);assert.equal(envelope(60,0,120,1,0),1);assert.equal(envelope(120,0,120,0,0),0);
+test('conflicting single-owner tracks are rejected; independent layers can overlap', () => {
+  const x: any = input();
+  x.events.push(
+    ...['n1', 'n2'].map((id) => ({
+      id,
+      type: 'news',
+      cut: 'first',
+      at: 0,
+      duration: 4,
+      source: 'news',
+      headline: '검증용 제목',
+    })),
+  );
+  assert.throws(() => compile(scenarioSchema.parse(x), new Set(['47190'])), /overlapping news/);
+  x.events.pop();
+  x.events.push({
+    id: 'm',
+    type: 'marker',
+    cut: 'first',
+    at: 0,
+    duration: 4,
+    position: [127, 36],
+    label: '검증',
+  });
+  assert.doesNotThrow(() => compile(scenarioSchema.parse(x), new Set(['47190'])));
 });
-test('correction cannot precede original and past-time cuts are rejected',()=>{
- const x=input();x.events[0].corrects='b';assert.throws(()=>compile(scenarioSchema.parse(x),new Set(['47190'])),/correction must follow/);
- const y=input();y.cuts[1].storyTime='2026-01-01T11:00:00+09:00';assert.throws(()=>compile(scenarioSchema.parse(y),new Set(['47190'])),/storyTime/);
+test('cut crossing is explicit and audio envelope is frame based', () => {
+  const x: any = input();
+  x.events.push({ id: 'silence', type: 'silence', cut: 'first', at: 9, duration: 2 });
+  assert.throws(() => compile(scenarioSchema.parse(x), new Set(['47190'])), /carry/);
+  x.events.at(-1).carry = true;
+  const t = compile(scenarioSchema.parse(x), new Set(['47190']));
+  assert.ok(stateAt(t, 620).visible.some((e) => e.id === 'silence'));
+  assert.equal(envelope(0, 0, 120, 1, 0), 0);
+  assert.equal(envelope(60, 0, 120, 1, 0), 1);
+  assert.equal(envelope(120, 0, 120, 0, 0), 0);
 });
-test('pagination preserves all original text',()=>{
- const text='[시험시] 산지 인근 접근을 삼가고 실내에 머물러 주시기 바랍니다.\n'.repeat(30);
- assert.equal(pages(text).join(''),text);assert.ok(pages(text).every(p=>p.length<=100));
+test('correction cannot precede original and past-time cuts are rejected', () => {
+  const x = input();
+  x.events[0].corrects = 'b';
+  assert.throws(
+    () => compile(scenarioSchema.parse(x), new Set(['47190'])),
+    /correction must follow/,
+  );
+  const y = input();
+  y.cuts[1].storyTime = '2026-01-01T11:00:00+09:00';
+  assert.throws(() => compile(scenarioSchema.parse(y), new Set(['47190'])), /storyTime/);
 });
-test('external workspace resolves assets relative to scenario and reports missing files',async()=>{
- const dir=await mkdtemp(path.join(os.tmpdir(),'dbs-contract-'));
- try{
-  const x:any=input();x.assets={tone:{path:'tone.wav',source:'test',license:'CC0'}};
-  await writeFile(path.join(dir,'scenario.json'),JSON.stringify(x));
-  await assert.rejects(loadScenario(path.join(dir,'scenario.json')),/assets.tone.path.*missing/);
-  await writeFile(path.join(dir,'tone.wav'),'test');
-  const loaded=await loadScenario(path.join(dir,'scenario.json'));assert.equal(loaded.assetPaths.tone,path.join(dir,'tone.wav'));
- }finally{await rm(dir,{recursive:true,force:true});}
+test('pagination preserves all original text', () => {
+  const text = '[시험시] 산지 인근 접근을 삼가고 실내에 머물러 주시기 바랍니다.\n'.repeat(30);
+  assert.equal(pages(text).join(''), text);
+  assert.ok(pages(text).every((p) => p.length <= 100));
 });
-test('unknown keys catch misspellings and fractional subframes are rejected',()=>{
- const x:any=input();x.events[0].recievedAt='bad';assert.equal(scenarioSchema.safeParse(x).success,false);
- const y=input();y.cuts[0].duration=0.001;assert.throws(()=>compile(scenarioSchema.parse(y),new Set(['47190'])),/shorter than one frame/);
+test('external workspace resolves assets relative to scenario and reports missing files', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'dbs-contract-'));
+  try {
+    const x: any = input();
+    x.assets = { tone: { path: 'tone.wav', source: 'test', license: 'CC0' } };
+    await writeFile(path.join(dir, 'scenario.json'), JSON.stringify(x));
+    await assert.rejects(
+      loadScenario(path.join(dir, 'scenario.json')),
+      /assets.tone.path.*missing/,
+    );
+    await writeFile(path.join(dir, 'tone.wav'), 'test');
+    const loaded = await loadScenario(path.join(dir, 'scenario.json'));
+    assert.equal(loaded.assetPaths.tone, path.join(dir, 'tone.wav'));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+test('unknown keys catch misspellings and fractional subframes are rejected', () => {
+  const x: any = input();
+  x.events[0].recievedAt = 'bad';
+  assert.equal(scenarioSchema.safeParse(x).success, false);
+  const y = input();
+  y.cuts[0].duration = 0.001;
+  assert.throws(
+    () => compile(scenarioSchema.parse(y), new Set(['47190'])),
+    /shorter than one frame/,
+  );
+});
+
+test('status text and colors are authored verbatim and restore on direct seek', () => {
+  const x: any = input();
+  x.events.push(
+    {
+      id: 's1',
+      type: 'status',
+      cut: 'first',
+      at: 1,
+      duration: 2,
+      items: [
+        { text: 'DEFCON 4', color: '#aabbcc' },
+        { text: '연결 유지', color: '#123456' },
+      ],
+    },
+    { id: 's2', type: 'status', cut: 'first', at: 3, duration: 2, items: [] },
+  );
+  const t = compile(scenarioSchema.parse(x), new Set(['47190']));
+  assert.deepEqual(
+    stateAt(t, 60).visible.find((e) => e.type === 'status')?.items,
+    x.events[2].items,
+  );
+  assert.deepEqual(stateAt(t, 180).visible.find((e) => e.type === 'status')?.items, []);
+  assert.equal(
+    stateAt(t, 300).visible.some((e) => e.type === 'status'),
+    false,
+  );
+  x.events[3].at = 2;
+  assert.throws(() => compile(scenarioSchema.parse(x), new Set(['47190'])), /overlapping status/);
+});
+test('broadcast notices, optional marker captions, and geographic overlay contracts', () => {
+  const x: any = input();
+  x.events.push(
+    {
+      id: 'b1',
+      type: 'bulletin',
+      cut: 'first',
+      at: 0,
+      duration: 3,
+      source: 'city',
+      heading: '안내',
+      text: '내용',
+    },
+    { id: 'p1', type: 'marker', cut: 'first', at: 0, duration: 3, position: [127, 36] },
+    {
+      id: 'z1',
+      type: 'zone',
+      cut: 'first',
+      at: 0,
+      duration: 3,
+      points: [
+        [127, 36],
+        [128, 36],
+        [128, 37],
+        [127, 36],
+      ],
+    },
+    {
+      id: 'l1',
+      type: 'line',
+      cut: 'first',
+      at: 0,
+      duration: 3,
+      points: [
+        [127, 36],
+        [128, 37],
+      ],
+      drawSeconds: 4,
+    },
+  );
+  assert.doesNotThrow(() => compile(scenarioSchema.parse(x), new Set(['47190'])));
+  x.events[4].points[3] = [129, 36];
+  assert.throws(() => compile(scenarioSchema.parse(x), new Set(['47190'])), /points/);
+  assert.equal(alertText('시험시', '[시험시] 안내'), '[시험시] 안내');
+  assert.equal(alertText('시험시', '시험시 일부 지역 안내'), '[시험시] 시험시 일부 지역 안내');
+});
+
+test('publication credits retain creator, source, license and custom asset credits', () => {
+  const x = scenarioSchema.parse(input());
+  const entry = {
+    id: 'kr-boundaries',
+    title: '경계',
+    creator: '제공자',
+    sources: ['https://example.org/source'],
+    licenses: [{ name: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' }],
+    changes: '병합',
+  };
+  const credits = makeCredits(x, [entry]);
+  for (const value of [
+    '제공자',
+    'https://example.org/source',
+    'https://creativecommons.org/licenses/by/4.0/',
+    '병합',
+  ])
+    assert.ok(credits.text.includes(value));
+  x.map.regions = 'local.geojson';
+  x.map.attribution = '로컬 경계: 제공자·이용조건';
+  x.assets = { sound: { path: 'private/path.wav', source: '직접 제작', license: 'CC0' } };
+  const custom = makeCredits(x, [entry]);
+  assert.deepEqual(custom.entries, []);
+  assert.ok(custom.text.includes(x.map.attribution));
+  assert.ok(custom.text.includes('직접 제작'));
+  assert.equal(custom.text.includes('private/path.wav'), false);
 });

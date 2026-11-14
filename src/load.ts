@@ -4,7 +4,7 @@ import { readBundledJson } from './assets.js';
 export { packageRoot } from './assets.js';
 import { parseDocument } from 'yaml';
 import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
-import { compile, scenarioSchema, pages, FPS, type Timeline } from './scenario.js';
+import { compile, scenarioSchema, alertText, pages, FPS, type Timeline } from './scenario.js';
 export type Regions = FeatureCollection<Polygon | MultiPolygon>;
 export type Loaded = {
   timeline: Timeline;
@@ -90,9 +90,12 @@ export async function loadScenario(file: string): Promise<Loaded> {
       const a = alerts[i];
       if (a.type !== 'alert') continue;
       const next = alerts[i + 1]?.start ?? timeline.durationInFrames;
-      if (next - Math.max(a.start, 180) < pages(a.text).length * a.pageSeconds * FPS)
+      if (
+        next - Math.max(a.start, 180) <
+        pages(alertText(scenario.agencies[a.sender], a.text)).length * a.pageSeconds * FPS
+      )
         warnings.push(
-          `${a.id}: latest-message reading time is short; allow ${pages(a.text).length * a.pageSeconds}s before the next alert/end`,
+          `${a.id}: latest-message reading time is short; allow ${pages(alertText(scenario.agencies[a.sender], a.text)).length * a.pageSeconds}s before the next alert/end`,
         );
     }
     return { timeline, regions, root, assetPaths, warnings };

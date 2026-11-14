@@ -3,7 +3,8 @@
 텍스트 시나리오를 한국형 재난방송 호러 영상으로 만드는 CLI. 지도·재난문자 이력·뉴스·시간·음향을 하나의 작품 파일로 지정하고 1080p 60fps MP4로 출력한다.
 
 - 실제 시도·시군구 경계와 한반도 지도, 지역 강조·지점·보조 지도
-- 문자 전문·정정 이력·독립 뉴스 헤드라인
+- 문자 전문·정정 이력·독립 뉴스 헤드라인·방송 안내 화면
+- 문구·색상 기반 상태 박스, 사용자 지정 영역·진행선
 - 컷 내부 실시간, 컷 사이 시간 도약, 프레임 지정 탐색
 - 로컬 지도·한글 글꼴·음원, 페이드·침묵·화면 간섭
 - 엔진과 분리해서 배포할 창작 AI용 스킬·공식 문안 참고자료
@@ -27,11 +28,13 @@ npx dbs skill --out .agents/skills/scenario-writing
 
 ```sh
 npx dbs schema --out scenario.schema.json
-npx dbs regions
+npx dbs regions --search 철원
 npx dbs validate scenario.yaml
+npx dbs inspect scenario.yaml --frame 360
 npx dbs frame scenario.yaml --frame 360 --out preview.png
 npx dbs render scenario.yaml --from 300 --to 599 --out clip.mp4
 npx dbs render scenario.yaml --out film.mp4
+npx dbs credits scenario.yaml --out description-credits.txt
 ```
 
 YAML/JSON의 `cuts`에 이야기 시작 시각과 길이, `events`에 문자·뉴스·지도·음향을 지정한다. 컷 안은 실시간으로 흐르고 컷 경계에서만 시간을 생략한다. 프레임은 0부터 시작하며 구간의 끝 프레임도 포함한다. 300~599는 5초다.
@@ -40,7 +43,7 @@ YAML/JSON의 `cuts`에 이야기 시작 시각과 길이, `events`에 문자·�
 
 `--browser /path/to/chromium`으로 설치된 브라우저를 사용할 수 있다. 생략 시 Remotion이 Chrome Headless Shell을 관리하며 최초 준비에 네트워크가 필요하다. 준비 후 출력은 원격 지도·API를 사용하지 않는다. 기본 GPU 백엔드는 `angle`, Linux CPU 렌더링에는 `--gl swangle`을 지정한다. `--concurrency` 기본값은 2다. 60fps는 영상 규격이며 실시간 렌더 속도를 의미하지 않는다.
 
-기존 출력은 `--overwrite` 없이는 덮어쓰지 않는다. 오류는 종료코드 1과 파일·필드 위치로 반환한다. 성공한 출력 옆 `.json`에 작품·출력 범위·자산 출처를 남긴다.
+기존 출력은 `--overwrite` 없이는 덮어쓰지 않는다. 오류는 종료코드 1과 파일·필드 위치로 반환한다. 성공한 출력 옆 `.json`에 작품·출력 범위·자산 출처를 남긴다. `.credits.txt`는 유튜브 설명란 등에 붙일 출처 문안이다. 기본 지도에는 지역명·시설명·출처 오버레이가 없으며, 영상 게시 시 이 출처 문안을 함께 제공한다.
 
 ## 개발
 

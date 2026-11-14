@@ -8,6 +8,7 @@ import { packageRoot, type Loaded } from './load.js';
 import type { BroadcastProps } from './video/Broadcast.js';
 import { fonts } from './video/fonts.js';
 import { readBundledJson } from './assets.js';
+import { makeCredits, type Credit } from './credits.js';
 import type { FeatureCollection } from 'geojson';
 export type RenderOptions = {
   out: string;
@@ -88,7 +89,6 @@ export async function render(loaded: Loaded, options: RenderOptions) {
       countries,
       provinces,
       audio,
-      attribution: `${loaded.timeline.scenario.map.attribution ?? '경계: 통계청 SGIS · vuski/admdongkor (CC BY 4.0)'} · 북한: WFP/OCHA (CC BY 3.0 IGO) · Natural Earth`,
     };
     const serveUrl = await bundle({
       entryPoint: path.join(packageRoot, 'dist/video/index.js'),
@@ -105,6 +105,7 @@ export async function render(loaded: Loaded, options: RenderOptions) {
       inputProps,
       browserExecutable,
       chromiumOptions,
+      timeoutInMilliseconds: 120_000,
     });
     const common = {
       composition,
@@ -112,9 +113,11 @@ export async function render(loaded: Loaded, options: RenderOptions) {
       inputProps,
       browserExecutable,
       chromiumOptions,
+      timeoutInMilliseconds: 120_000,
       output: pending,
     };
-    let lastProgress = -1;
+    let lastProgress = -1,
+      lastReport = 0;
     if (still) await renderStill({ ...common, frame: options.frame!, imageFormat: 'png' });
     else
       await renderMedia({
@@ -123,6 +126,7 @@ export async function render(loaded: Loaded, options: RenderOptions) {
         inputProps,
         browserExecutable,
         chromiumOptions,
+        timeoutInMilliseconds: 120_000,
         outputLocation: pending,
         codec: 'h264',
         audioCodec: 'aac',
@@ -133,13 +137,21 @@ export async function render(loaded: Loaded, options: RenderOptions) {
         crf: 18,
         onProgress: (p) => {
           const step = Math.floor(p.progress * 10);
-          if (step !== lastProgress) {
+          if (step !== lastProgress || Date.now() - lastReport > 15000) {
             lastProgress = step;
-            console.error(`Rendering ${step * 10}%`);
+            lastReport = Date.now();
+            console.error(
+              `Rendering ${Math.floor(p.progress * 100)}% · ${p.renderedFrames}/${to - from + 1} frames`,
+            );
           }
         },
       });
+    const credits = makeCredits(
+      loaded.timeline.scenario,
+      await readBundledJson<Credit[]>('attribution.json'),
+    );
     await rename(pending, out);
+    await writeFile(`${out}.credits.txt`, credits.text);
     await writeFile(
       `${out}.json`,
       JSON.stringify(
@@ -151,7 +163,9 @@ export async function render(loaded: Loaded, options: RenderOptions) {
           height: 1080,
           frames: still ? [options.frame] : [from, to],
           assets: loaded.timeline.scenario.assets,
-          mapAttribution: inputProps.attribution,
+          credits: credits.entries,
+          customMapAttribution: credits.customMap,
+          creditsFile: `${path.basename(out)}.credits.txt`,
         },
         null,
         2,

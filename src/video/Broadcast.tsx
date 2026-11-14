@@ -10,7 +10,7 @@ import {
 } from 'remotion';
 import type { FeatureCollection } from 'geojson';
 import type { Timeline, CompiledEvent } from '../scenario.js';
-import { FPS, pages } from '../scenario.js';
+import { FPS, pages, alertText } from '../scenario.js';
 import type { Regions } from '../load.js';
 import { stateAt, clock, envelope } from '../timeline.js';
 import { BroadcastMap } from './Map.js';
@@ -21,7 +21,6 @@ export type BroadcastProps = {
   countries: FeatureCollection;
   provinces: FeatureCollection;
   audio: Record<string, string>;
-  attribution: string;
 };
 const colors: Record<string, string> = {
   안전안내: '#a0adb5',
@@ -40,7 +39,7 @@ function AlertCard({
   timeline: Timeline;
 }) {
   if (event.type !== 'alert') return null;
-  const chunks = pages(event.text),
+  const chunks = pages(alertText(timeline.scenario.agencies[event.sender], event.text)),
     page = Math.floor((frame - event.start) / FPS / event.pageSeconds) % chunks.length;
   const received = stateAt(timeline, event.start).epoch;
   return (
@@ -83,16 +82,6 @@ function AlertCard({
         >
           수신 {clock(received, timeline.scenario.timezone)}
         </span>
-      </div>
-      <div
-        style={{
-          fontSize: latest ? 21 : 19,
-          fontWeight: 600,
-          marginBottom: 12,
-          color: latest ? '#d5dade' : '#a4afb7',
-        }}
-      >
-        {timeline.scenario.agencies[event.sender]}
       </div>
       {(event.occurredAt || event.publishedAt) && (
         <div style={{ fontSize: 16, color: '#939fa7', marginBottom: 10 }}>
@@ -148,7 +137,7 @@ function AlertCard({
   );
 }
 export function Broadcast(props: BroadcastProps) {
-  const { timeline, regions, countries, provinces, audio, attribution } = props;
+  const { timeline, regions, countries, provinces, audio } = props;
   const frame = useCurrentFrame(),
     state = stateAt(timeline, frame),
     news = state.news;
@@ -193,6 +182,8 @@ export function Broadcast(props: BroadcastProps) {
       .catch(cancelRender);
     return () => links.forEach((link) => link.remove());
   }, []);
+  const status = state.visible.find((e) => e.type === 'status');
+  const bulletin = state.visible.find((e) => e.type === 'bulletin');
   const inset = state.visible.find((e) => e.type === 'inset');
   const alertWindow =
     state.alerts.length <= 2
@@ -210,7 +201,7 @@ export function Broadcast(props: BroadcastProps) {
           style={{
             position: 'absolute',
             inset: '0 0 auto 0',
-            height: 64,
+            height: 48,
             display: 'flex',
             alignItems: 'center',
             padding: '0 26px',
@@ -219,20 +210,23 @@ export function Broadcast(props: BroadcastProps) {
             gap: 14,
           }}
         >
-          <span style={{ width: 4, height: 23, background: '#a7b3bb' }} />
-          <h1
-            style={{
-              fontSize: timeline.scenario.title.length > 40 ? 20 : 25,
-              fontWeight: 600,
-              margin: 0,
-              letterSpacing: 0.5,
-              maxWidth: 1080,
-              lineHeight: 1.3,
-              overflowWrap: 'anywhere',
-            }}
-          >
-            {timeline.scenario.title}
-          </h1>
+          {status?.type === 'status' &&
+            status.items.map((item, i) => (
+              <span
+                key={i}
+                style={{
+                  border: `1px solid ${item.color}`,
+                  color: item.color,
+                  padding: '3px 10px',
+                  fontSize: 18,
+                  lineHeight: 1.3,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {item.text}
+              </span>
+            ))}
           <time
             style={{
               marginLeft: 'auto',
@@ -246,9 +240,10 @@ export function Broadcast(props: BroadcastProps) {
             {clock(state.epoch, timeline.scenario.timezone, true)}
           </time>
         </header>
-        <main style={{ position: 'absolute', left: 0, top: 65, right: 640, bottom: 93 }}>
+        <main style={{ position: 'absolute', left: 0, top: 49, right: 640, bottom: 93 }}>
           <BroadcastMap
             camera={state.camera}
+            moving={state.visible.some((e) => e.type === 'camera')}
             countries={countries}
             regions={regions}
             provinces={provinces}
@@ -260,7 +255,7 @@ export function Broadcast(props: BroadcastProps) {
               style={{
                 position: 'absolute',
                 right: 20,
-                bottom: 38,
+                bottom: 20,
                 width: 420,
                 height: 290,
                 border: '1px solid #78858e',
@@ -291,24 +286,11 @@ export function Broadcast(props: BroadcastProps) {
               </div>
             </div>
           )}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 10,
-              left: 16,
-              right: 16,
-              fontSize: 12,
-              color: '#7b8992',
-              textShadow: '0 1px 2px #000',
-            }}
-          >
-            {attribution}
-          </div>
         </main>
         <aside
           style={{
             position: 'absolute',
-            top: 65,
+            top: 49,
             right: 0,
             bottom: 93,
             width: 640,
@@ -317,24 +299,6 @@ export function Broadcast(props: BroadcastProps) {
             overflow: 'hidden',
           }}
         >
-          <div
-            style={{
-              height: 44,
-              padding: '10px 24px',
-              boxSizing: 'border-box',
-              fontSize: 17,
-              color: '#a5b1ba',
-              borderBottom: '1px solid #495159',
-              display: 'flex',
-              justifyContent: 'space-between',
-              background: '#0d1113',
-            }}
-          >
-            <b>재난문자 수신 이력</b>
-            <span style={{ fontFamily: numberFont, fontVariantNumeric: 'tabular-nums' }}>
-              {state.alerts.length.toString().padStart(2, '0')}
-            </span>
-          </div>
           {alertWindow.map((event, i) => (
             <AlertCard
               key={event.id}
@@ -345,6 +309,65 @@ export function Broadcast(props: BroadcastProps) {
             />
           ))}
         </aside>
+        {bulletin?.type === 'bulletin' &&
+          (() => {
+            const chunks = pages(bulletin.text);
+            const page =
+              Math.floor((frame - bulletin.start) / FPS / bulletin.pageSeconds) % chunks.length;
+            return (
+              <section
+                style={{
+                  position: 'absolute',
+                  top: 49,
+                  bottom: 93,
+                  left: 0,
+                  right: 0,
+                  background: '#0a0d0f',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  padding: '50px 190px',
+                }}
+              >
+                <div style={{ fontSize: 23, color: '#9ba5ac', marginBottom: 32 }}>
+                  {timeline.scenario.agencies[bulletin.source]}
+                </div>
+                <h2
+                  style={{
+                    fontSize: 46,
+                    fontWeight: 600,
+                    color: bulletin.color,
+                    margin: '0 0 32px',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {bulletin.heading}
+                </h2>
+                <div
+                  style={{
+                    fontSize: 34,
+                    lineHeight: 1.9,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'keep-all',
+                  }}
+                >
+                  {chunks[page]}
+                </div>
+                {chunks.length > 1 && (
+                  <div
+                    style={{
+                      fontSize: 18,
+                      marginTop: 30,
+                      color: '#8c969d',
+                      fontFamily: numberFont,
+                    }}
+                  >
+                    {page + 1} / {chunks.length}
+                  </div>
+                )}
+              </section>
+            );
+          })()}
         <footer
           style={{
             position: 'absolute',
@@ -362,7 +385,7 @@ export function Broadcast(props: BroadcastProps) {
         >
           {news?.type === 'news' && (
             <>
-              <div style={{ borderLeft: '3px solid #aab6be', paddingLeft: 14, minWidth: 135 }}>
+              <div style={{ minWidth: 135 }}>
                 <div style={{ fontSize: 18, color: '#b3c0c9', fontWeight: 600 }}>
                   {timeline.scenario.agencies[news.source]}
                 </div>

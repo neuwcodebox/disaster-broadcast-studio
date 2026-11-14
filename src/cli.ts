@@ -5,6 +5,8 @@ import path from 'node:path';
 import { loadScenario, packageRoot } from './load.js';
 import { readBundledJson } from './assets.js';
 import { scenarioSchema } from './scenario.js';
+import { stateAt, clock } from './timeline.js';
+import { makeCredits, type Credit } from './credits.js';
 import { z } from 'zod';
 const program = new Command()
   .name('dbs')
@@ -41,10 +43,52 @@ program
 program
   .command('regions')
   .description('List bundled region IDs and Korean names')
-  .action(async () => {
+  .option('--search <text>', 'Filter Korean names or IDs')
+  .option('--json', 'Output structured regions')
+  .action(async (opts) => {
     const data = await readBundledJson<import('geojson').FeatureCollection>('regions.geojson.gz');
-    for (const f of data.features)
-      console.log(`${f.properties!.SIG_CD}\t${f.properties!.SIG_KOR_NM}`);
+    const entries = data.features
+      .map((f) => ({ id: String(f.properties!.SIG_CD), name: String(f.properties!.SIG_KOR_NM) }))
+      .filter((f) => !opts.search || `${f.id} ${f.name}`.includes(opts.search));
+    if (opts.json) console.log(JSON.stringify(entries, null, 2));
+    else for (const f of entries) console.log(`${f.id}\t${f.name}`);
+  });
+program
+  .command('inspect <scenario>')
+  .description('Inspect a frame without rendering')
+  .requiredOption('--frame <number>', 'Zero-based frame')
+  .action(async (file, opts) => {
+    const { timeline, warnings } = await loadScenario(file);
+    const state = stateAt(timeline, Number(opts.frame));
+    console.log(
+      JSON.stringify(
+        {
+          frame: state.frame,
+          cut: state.cut.id,
+          storyTime: new Date(state.epoch).toISOString(),
+          clock: clock(state.epoch, timeline.scenario.timezone, true),
+          camera: state.camera,
+          visible: state.visible,
+          alerts: state.alerts,
+          warnings,
+        },
+        null,
+        2,
+      ),
+    );
+  });
+program
+  .command('credits <scenario>')
+  .description('Prepare source credits for the video description')
+  .option('-o, --out <path>')
+  .action(async (file, opts) => {
+    const { timeline } = await loadScenario(file);
+    const { text } = makeCredits(
+      timeline.scenario,
+      await readBundledJson<Credit[]>('attribution.json'),
+    );
+    if (opts.out) await writeFile(opts.out, text);
+    else process.stdout.write(text);
   });
 program
   .command('skill')
@@ -88,7 +132,7 @@ for (const mode of ['frame', 'render'] as const) {
       from: opts.from !== undefined ? Number(opts.from) : undefined,
       to: opts.to !== undefined ? Number(opts.to) : undefined,
     });
-    console.log(JSON.stringify({ ok: true, output: result }));
+    console.log(JSON.stringify({ ok: true, output: result, credits: `${result}.credits.txt` }));
   });
 }
 program.parseAsync().catch((e) => {

@@ -38,6 +38,44 @@ const news = z
     publishedAt: timestamp.optional(),
   })
   .strict();
+const status = z
+  .object({
+    ...span,
+    type: z.literal('status'),
+    items: z.array(z.object({ text: z.string().min(1).max(80), color }).strict()),
+  })
+  .strict();
+const bulletin = z
+  .object({
+    ...span,
+    type: z.literal('bulletin'),
+    source: id,
+    heading: z.string().min(1).max(80),
+    text: z.string().min(1).max(4000),
+    color: color.default('#b7c1c8'),
+    pageSeconds: z.number().min(3).default(12),
+  })
+  .strict();
+const zone = z
+  .object({
+    ...span,
+    type: z.literal('zone'),
+    points: z.array(position).min(4),
+    color: color.default('#b9615b'),
+    opacity: z.number().min(0).max(1).default(0.18),
+  })
+  .strict();
+const line = z
+  .object({
+    ...span,
+    type: z.literal('line'),
+    points: z.array(position).min(2),
+    color: color.default('#b7c1c8'),
+    width: z.number().positive().default(2),
+    drawSeconds: seconds.default(0),
+    dashed: z.boolean().default(false),
+  })
+  .strict();
 const highlight = z
   .object({
     ...span,
@@ -53,7 +91,7 @@ const marker = z
     ...span,
     type: z.literal('marker'),
     position,
-    label: z.string().max(80),
+    label: z.string().max(80).optional(),
     color: color.default('#c9d0d5'),
     effect: z.enum(['point', 'ring']).default('point'),
   })
@@ -132,6 +170,10 @@ export const scenarioSchema = z
         z.discriminatedUnion('type', [
           alert,
           news,
+          status,
+          bulletin,
+          zone,
+          line,
           highlight,
           marker,
           cameraEvent,
@@ -158,6 +200,8 @@ export type Timeline = {
 };
 export const FPS = 60;
 export const frames = (seconds: number) => Math.round(seconds * FPS);
+export const alertText = (sender: string, text: string) =>
+  text.includes(`[${sender}]`) ? text : `[${sender}] ${text}`;
 export const pages = (text: string) => {
   const result: string[] = [];
   let remaining = Array.from(
@@ -231,7 +275,12 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
           errors.push(`${path}.corrects: unknown alert ${e.corrects}`);
       }
     }
-    if (e.type === 'news' && !(e.source in scenario.agencies))
+    if (
+      e.type === 'zone' &&
+      (e.points[0][0] !== e.points.at(-1)![0] || e.points[0][1] !== e.points.at(-1)![1])
+    )
+      errors.push(`${path}.points: polygon ring must be closed`);
+    if ((e.type === 'news' || e.type === 'bulletin') && !(e.source in scenario.agencies))
       errors.push(`${path}.source: unknown agency ${e.source}`);
     if (e.type === 'audio') {
       if (!(e.asset in scenario.assets)) errors.push(`${path}.asset: unknown asset ${e.asset}`);
@@ -249,7 +298,7 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
     }
   }
   // Single-owner tracks cannot have ambiguous concurrent values. Independent layers can overlap.
-  for (const type of ['camera', 'inset', 'news'] as const) {
+  for (const type of ['camera', 'inset', 'news', 'status', 'bulletin'] as const) {
     const track = events.filter((e) => e.type === type).sort((a, b) => a.start - b.start);
     for (let i = 1; i < track.length; i++)
       if (track[i].start < track[i - 1].end)
