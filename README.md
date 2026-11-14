@@ -1,30 +1,62 @@
 # 재난방송실 · Disaster Broadcast Studio
 
-별도의 창작 AI가 텍스트로 작성한 시나리오와 연출을 한국형 재난방송 호러 영상으로 만드는 제작 도구다. 지도·재난문자 이력·뉴스 화면을 재사용해, 작품마다 엔진을 다시 만들지 않고 다른 이야기를 제작한다.
+텍스트 시나리오를 한국형 재난방송 호러 영상으로 만드는 CLI. 지도·재난문자 이력·뉴스·시간·음향을 하나의 작품 파일로 지정하고 1080p 60fps MP4로 출력한다.
 
-## 주요 기능
+- 남한 시군구 경계와 한반도 지도, 지역 강조·지점·보조 지도
+- 문자 전문·정정 이력·독립 뉴스 헤드라인
+- 컷 내부 실시간, 컷 사이 시간 도약, 프레임 지정 탐색
+- 로컬 지도·한글 글꼴·음원, 페이드·침묵·화면 간섭
+- 엔진과 분리해서 배포할 창작 AI용 스킬·공식 문안 참고자료
 
-- 한반도 지도와 재난문자 발송 이력, 뉴스 헤드라인을 조합한 절제된 방송 화면
-- 내용뿐 아니라 등장 시점·지도 이동·강조·소리·침묵까지 텍스트로 지정하는 제작 방식
-- 컷 안에서는 실제 시간처럼 흐르고, 컷 전환에서는 이야기 시간을 건너뛸 수 있는 시간 구성
-- 프레임·구간 확인부터 1920×1080, 60fps 완성 영상 출력까지 이어지는 제작 흐름
+## 설치
 
-## 시작하기
+Node.js 22 이상과 Chromium 실행에 필요한 OS 라이브러리를 사용한다. npm 공개 게시는 아직 하지 않았다. 제공된 패키지 또는 이 저장소에서 만든 패키지를 설치한다.
 
-현재 제공되는 것은 개발을 시작하기 위한 문서와 창작 AI용 스킬 지침이다. 엔진·스킬의 실행 기능은 구현하지 않았다. 실행 가능한 프로그램이나 설치 명령은 아직 없다. 로컬 개발은 [개발 지침](AGENTS.md)과 [개발 계획](docs/PLAN.md)을 읽고 시작한다.
+```sh
+npm ci
+npm run build
+npm pack
+# 별도 작품 폴더에서
+npm install /path/disaster-broadcast-studio-0.1.0.tgz
+npx dbs skill --out .agents/skills/scenario-writing
+```
 
-## 사용 방법
+창작 AI에게 설치한 스킬을 사용하도록 요청하고 작품은 엔진 저장소 밖에 만든다. 스킬 전체를 별도로 복사해 전달해도 된다. [작품 형식·CLI](skills/scenario-writing/references/format.md)가 독립된 사용 설명서다.
 
-이 저장소는 엔진 개발·배포 전용이다. 완성 후 사용자는 독립된 빈 작업 폴더에 npm 패키지로 배포되는 CLI를 별도로 설치하고, 창작 AI용 스킬을 따로 받아 작품을 만든다. 창작 AI는 엔진 저장소 없이 스킬에 동봉된 자료를 읽고, CLI에 그 작업 폴더의 작품 경로를 전달해 검증·미리보기·영상 출력을 수행한다. GUI 편집기를 조작하는 방식이 아니다. npm 패키지명·실제 실행명·데이터 문법은 구현 후 배포 문서에 제공한다. 현재 임의의 설치 명령을 제시하지 않는다.
+## 제작
 
-## 문서
+```sh
+npx dbs schema --out scenario.schema.json
+npx dbs regions
+npx dbs validate scenario.yaml
+npx dbs frame scenario.yaml --frame 360 --out preview.png
+npx dbs render scenario.yaml --from 300 --to 599 --out clip.mp4
+npx dbs render scenario.yaml --out film.mp4
+```
 
-- [SPEC](docs/SPEC.md): 제작 도구의 목표와 요구사항
-- [TECH](docs/TECH.md): 구성·데이터 경계·기술 선택
-- [PLAN](docs/PLAN.md): 개발 순서와 현재 상태
-- [배포용 창작 스킬](skills/scenario-writing/SKILL.md): 창작 AI가 사용하는 작업 지침
-- [동봉 참고자료](skills/scenario-writing/references/README.md): 공식 문안과 보도 문체의 정본
+YAML/JSON의 `cuts`에 이야기 시작 시각과 길이, `events`에 문자·뉴스·지도·음향을 지정한다. 컷 안은 실시간으로 흐르고 컷 경계에서만 시간을 생략한다. 프레임은 0부터 시작하며 구간의 끝 프레임도 포함한다. 300~599는 5초다.
 
-## 라이선스
+기본 출력은 H.264/AAC MP4, 1920×1080, 60fps다. 음원이 없는 작품도 무음 오디오 트랙을 포함한다. 처음 3초에는 작품 제목과 필수 허구 고지를 표시한다. 긴 문자는 전문을 페이지로 나누고, 최신 문자와 이전 이력을 함께 표시한다. 읽기 시간 경고가 나오면 다음 문자까지 간격을 늘린다.
 
-프로젝트의 배포 라이선스는 아직 정하지 않았다. 지도·폰트·음원·인용 자료는 각자의 이용조건을 따른다. 이 도구는 허구 영상을 제작하며 실제 재난문자를 발송하지 않는다.
+`--browser /path/to/chromium`으로 설치된 브라우저를 사용할 수 있다. 생략 시 Remotion이 Chrome Headless Shell을 관리하며 최초 준비에 네트워크가 필요하다. 준비 후 출력은 원격 지도·API를 사용하지 않는다. 기본 GPU 백엔드는 `angle`, Linux CPU 렌더링에는 `--gl swangle`을 지정한다. `--concurrency` 기본값은 2다. 60fps는 영상 규격이며 실시간 렌더 속도를 의미하지 않는다.
+
+기존 출력은 `--overwrite` 없이는 덮어쓰지 않는다. 오류는 종료코드 1과 파일·필드 위치로 반환한다. 성공한 출력 옆 `.json`에 작품·출력 범위·자산 출처를 남긴다.
+
+## 개발
+
+```sh
+npm test
+npm run typecheck
+npm run build
+```
+
+테스트는 시간·참조·외부 작품 입력 계약을 빠르게 확인한다. 실제 렌더 검증용 데이터는 `node scripts/render-fixtures.mjs /tmp/dbs-fixtures`로 저장소 밖에 생성한다. 실제 작품은 이 저장소에 보관하지 않는다.
+
+- [SPEC](docs/SPEC.md): 목표·요구사항
+- [TECH](docs/TECH.md): 구현 구조·선택 근거
+- [PLAN](docs/PLAN.md): 현재 상태·남은 작업
+- [창작 스킬](skills/scenario-writing/SKILL.md): 별도 창작 AI가 사용하는 지침
+
+## 이용조건
+
+코드는 MIT. [지도·글꼴 이용조건](assets/README.md)과 스킬에 인용된 자료의 출처를 함께 확인한다. Remotion은 [사용 주체별 라이선스 조건](https://www.remotion.dev/pricing)이 적용된다. 이 도구는 허구 영상 파일을 제작하며 실제 긴급 서비스에 연결하거나 문자를 발송하지 않는다.
