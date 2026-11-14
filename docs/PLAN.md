@@ -14,12 +14,12 @@
 | 단계 | 관련 요구 | 충족한 결과 | 근거 |
 | --- | --- | --- | --- |
 | P1 제작 계약·로컬 렌더 | F1, F2, F5, N2, N3, N4 | strict 스키마·참조 오류·결정적 시간·프레임 출력 | `src/scenario.ts`, `load.ts`, `timeline.ts`, `tests/contracts.test.ts` |
-| P2 방송 화면·지도 | F3, F5, N1, N2, N4 | 실제 경계·카메라·보조 지도·한글 장문·문자 이력·뉴스 | `src/video`, 실제 출력 프레임 |
+| P2 방송 화면·지도 | F3, F5, N1, N2, N4 | 정밀 행정경계·카메라·보조 지도·차가운 방송 레이아웃·문자 이력·뉴스 | `src/video`, 실제 출력 프레임 |
 | P3 연출·음향·영상 | F1, F2, F4, F5, N1, N2, N3 | 병렬 연출·페이드·침묵·1080p60 H.264/AAC·구간 출력 | 전체·구간 영상, 미디어·PCM 확인 |
 | P4 독립 스킬·패키지 | F6, N4 | 실제 CLI 계약·동봉 공식 자료·자산 이용조건·패키징 | `skills/scenario-writing`, `assets/README.md`, 외부 스킬 복사 |
 | P5 다작품·외부 사용 | F1~F6, N1~N4 | 엔진 변경 없이 서로 다른 외부 데이터 출력 | 외부 설치본 검증·전체·구간 출력 |
 
-실행 명령·환경 보정·남은 플랫폼 범위는 [작업 이력](history/2026-11-14-first-release.md)에 기록했다. 현재 사용법은 [README](../README.md)와 배포용 [파일 형식·CLI](../skills/scenario-writing/references/format.md)를 따른다.
+실행 명령·환경 보정·남은 플랫폼 범위는 [첫 구현 이력](history/2026-11-14-first-release.md), 정밀 지도·레이아웃·글꼴 확인은 [화면 개선 이력](history/2026-11-15-map-and-layout.md)에 기록했다. 현재 사용법은 [README](../README.md)와 배포용 [파일 형식·CLI](../skills/scenario-writing/references/format.md)를 따른다.
 
 ## 다음 작업
 

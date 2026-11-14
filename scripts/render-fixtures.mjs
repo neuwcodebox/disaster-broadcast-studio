@@ -7,7 +7,7 @@ for(let i=0;i<rate*seconds;i++)pcm.writeInt16LE(Math.round(Math.sin(i/rate*2*Mat
 const header=Buffer.alloc(44);header.write('RIFF');header.writeUInt32LE(36+pcm.length,4);header.write('WAVEfmt ',8);header.writeUInt32LE(16,16);header.writeUInt16LE(1,20);header.writeUInt16LE(1,22);header.writeUInt32LE(rate,24);header.writeUInt32LE(rate*2,28);header.writeUInt16LE(2,32);header.writeUInt16LE(16,34);header.write('data',36);header.writeUInt32LE(pcm.length,40);await writeFile(path.join(directory,'tone.wav'),Buffer.concat([header,pcm]));
 const base={version:1,title:'방송 화면 · 기술 검증',fictionNotice:'엔진 기능 확인을 위한 허구 화면입니다.',agencies:{city:'시험시청',news:'시험방송'},assets:{tone:{path:'tone.wav',source:'scripts/render-fixtures.mjs, original sine wave',license:'CC0'}},map:{camera:{center:[127.5,36.2],zoom:6.15}},cuts:[{id:'one',duration:5,storyTime:'2026-01-01T18:00:00+09:00'},{id:'two',duration:3,storyTime:'2026-01-01T19:30:00+09:00',fadeIn:0.2}],events:[
 {id:'alert',type:'alert',cut:'one',at:0,sender:'city',level:'긴급재난',text:'[시험시청] 이 문자는 화면 검증을 위한 안내입니다. 지도에 표시된 지역과 문자 수신 시각을 확인합니다. 실제 재난 안내가 아닙니다.',regions:['47190']},
-{id:'region',type:'region',cut:'one',at:0,duration:8,carry:true,regions:['47190','47210','47250'],label:'검증 지역',color:'#dfab66',pulse:true},
+{id:'region',type:'region',cut:'one',at:0,duration:8,carry:true,regions:['47190','47210','47250'],label:'검증 지역',color:'#bc665f',pulse:true},
 {id:'point',type:'marker',cut:'one',at:3,duration:2,position:[128.34,36.12],label:'표시 지점',effect:'ring'},
 {id:'news',type:'news',cut:'one',at:3,duration:5,carry:true,source:'news',headline:'지역 안내 화면 점검…문자·지도·뉴스 동시 표시'},
 {id:'camera',type:'camera',cut:'one',at:3,duration:2,to:{center:[128.1,36.1],zoom:7.4}},

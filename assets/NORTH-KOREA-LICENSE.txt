@@ -1,0 +1,25 @@
+North Korea (Democratic People's Republic of Korea) administrative boundary
+
+Source: World Food Programme (WFP), OCHA Regional Office for Asia and the Pacific.
+Dataset represented year: 2018.
+Distribution: geoBoundaries gbOpen PRK ADM0, boundary ID PRK-ADM0-24118357,
+revision 9469f09 (API metadata source update: 2023-01-19).
+
+Original source:
+https://data.humdata.org/dataset/dpr-korea-administrative-boundaries
+Redistributed source geometry:
+https://github.com/wmgeolab/geoBoundaries/blob/9469f09/releaseData/gbOpen/PRK/ADM0/geoBoundaries-PRK-ADM0.geojson
+Source and license metadata:
+https://www.geoboundaries.org/api/current/gbOpen/PRK/ADM0/
+
+License: Creative Commons Attribution 3.0 Intergovernmental Organisations
+(CC BY 3.0 IGO).
+License and legal code:
+https://creativecommons.org/licenses/by/3.0/igo/
+https://creativecommons.org/licenses/by/3.0/igo/legalcode
+
+The original boundary geometry is retained without simplification. Unused
+attributes are replaced by a country name and code, and the geometry is
+combined with separately licensed neighboring-country features and gzipped.
+Maps are produced works; no endorsement by WFP, OCHA or the UN is implied.
+Keep this attribution and the license link when redistributing the data.
