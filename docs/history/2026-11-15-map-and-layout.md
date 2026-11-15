@@ -18,6 +18,6 @@ SGIS/admdongkor 2026-07-01 원본을 시군구·시도로 병합해 좌표 단�
 - 실제 1920×1080 프레임에서 한반도와 백령도 확대, 내륙 행정경계·문자 이력을 직접 확인했다. 문자 카드 아래의 강제 공간과 지도 라벨 겹침을 확인하며 수정했다.
 - 최종 지도·글꼴을 사용한 60fps H.264/AAC MP4 구간을 출력하고 영상에서 추출한 프레임도 확인했다. 오프라인 자산 로딩은 유지했다.
 
-[한반도 프레임](../screenshots/broadcast.png) · [백령도 확대](../screenshots/baengnyeong.png).
+[한반도 프레임](../../assets/preview.png) · [백령도 확대](../screenshots/baengnyeong.png).
 
 환경은 첫 구현과 같은 Linux/Chrome Headless Shell·swangle이며 Windows/macOS 직접 실행 범위는 변하지 않았다.

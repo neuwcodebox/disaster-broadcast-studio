@@ -7,6 +7,7 @@
 | `countries.geojson.gz` | [Natural Earth 5.1.2, 1:10m admin 0](https://github.com/nvkelso/natural-earth-vector/blob/v5.1.2/geojson/ne_10m_admin_0_countries.geojson), 북한은 [WFP·OCHA/geoBoundaries PRK ADM0](https://www.geoboundaries.org/api/current/gbOpen/PRK/ADM0/) 2018판, revision `9469f09` | Natural Earth는 [Public domain](https://www.naturalearthdata.com/about/terms-of-use/), 북한은 [CC BY 3.0 IGO](https://creativecommons.org/licenses/by/3.0/igo/). 동아시아 7개국의 원본 경계 좌표를 유지하고 설명 열만 정리. `NORTH-KOREA-LICENSE.txt` 참조. |
 | IBM Plex Sans KR 400/600 | npm `@fontsource/ibm-plex-sans-kr` 5.3.0 | [SIL OFL 1.1](https://github.com/IBM/plex/blob/master/LICENSE.txt). 한글 본문용. `FONT-LICENSE.txt` 참조. |
 | IBM Plex Mono 400 | npm `@fontsource/ibm-plex-mono` 5.3.0 | 동일 OFL. 시각·페이지 수에 고정폭 숫자 사용. `MONO-FONT-LICENSE.txt` 참조. |
+| `preview.png` | 엔진의 허구 기술 검증 화면 | 위 지도·글꼴을 사용한 출력 예시. README 미리보기용으로 npm 패키지에 동봉하며 버전을 고정한 공개 CDN 주소로 제공. |
 
 지도 자산은 원본 좌표를 단순화하거나 정밀도를 낮추지 않고 gzip으로 압축한다. `scripts/build-map-assets.mjs`로 재생성하며 렌더 중 다운로드하지 않는다. MapLibre의 GeoJSON 단순화도 비활성화한다. 기본 지도에서 대한민국 육지·해안·시군구 강조는 같은 SGIS 폴리곤을 사용한다. 시도 구분선은 그 폴리곤을 병합한 경계다. 배경의 대한민국 도형은 기본 지도에서 제외하여 서로 다른 해안선을 겹치지 않는다.
 

@@ -2,7 +2,7 @@
 
 YAML/JSON 시나리오를 한국형 재난방송 호러 영상으로 만드는 CLI입니다. 문자·뉴스·지도·시계·음향을 텍스트로 연출하고, **1920×1080 · 60fps MP4**로 출력합니다.
 
-![재난방송실 출력 화면 — 허구의 기술 검증용 방송](https://raw.githubusercontent.com/neuwcodebox/disaster-broadcast-studio/main/docs/screenshots/broadcast.png)
+![재난방송실 출력 화면 — 허구의 기술 검증용 방송](https://cdn.jsdelivr.net/npm/disaster-broadcast-studio@0.1.1/assets/preview.png)
 
 ## 할 수 있는 일
 
