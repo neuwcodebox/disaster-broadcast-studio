@@ -35,17 +35,17 @@ test('preview updates valid inputs, keeps the last good frame on errors and reco
     assert.equal(project.status().revision, 2);
     assert.equal(project.current().props.timeline.scenario.title, scenario.title);
 
-    scenario.assets.extra = { path: 'audio/new.wav', source: '직접 제작', license: 'CC0' };
+    scenario.assets.extra = { path: 'output/audio/new.wav', source: '직접 제작', license: 'CC0' };
     await writeFile(file, stringify(scenario));
     await project.refresh();
     assert.match(project.status().error!, /missing file/);
-    await writeFile(path.join(root, 'audio/new.wav'), Buffer.from('first audio'));
+    await writeFile(path.join(root, 'output/audio/new.wav'), Buffer.from('first audio'));
     await project.refresh();
     assert.equal(project.status().error, null);
     assert.equal(project.status().revision, 3);
     const previousAudio = project.current().props.audio.extra;
     assert.equal(await readFile(path.join(root, 'public', previousAudio), 'utf8'), 'first audio');
-    await writeFile(path.join(root, 'audio/new.wav'), Buffer.from('changed audio'));
+    await writeFile(path.join(root, 'output/audio/new.wav'), Buffer.from('changed audio'));
     await project.refresh();
     assert.equal(project.status().revision, 4);
     assert.notEqual(project.current().props.audio.extra, previousAudio, 'changed audio has a fresh playback URL');

@@ -5,9 +5,11 @@
 | 경로 | 용도 |
 | --- | --- |
 | `scenario.yaml` | 작품의 시나리오와 연출 |
-| `audio/` | 작품에서 참조할 음원과 합성 기록 |
-| `audio-code/` | 음원 생성 코드 |
-| `output/` | 완성·구간 영상, 프레임 이미지, 검토 자료, 게시용 출처 등 산출물 |
+| `src/audio/` | 음원 생성 코드와 직접 준비한 원본 음원·샘플 |
+| `src/maps/` | 그리드 생성 코드와 직접 준비한 원본 지도 자료 |
+| `output/audio/` | 생성한 음원과 합성 기록 |
+| `output/maps/` | 생성한 그리드 |
+| `output/` | 완성·구간 영상, 프레임 이미지, 검토 자료, 게시용 출처 등 생성 결과 |
 
 아래 명령은 이 작품 폴더에서 실행한다. `--out`으로 산출물 경로를 지정하며, 영상·이미지의 `.json`·`.credits.txt`는 결과 파일 옆에 함께 생성된다.
 
@@ -19,7 +21,7 @@ npx dbs frame scenario.yaml --frame 600 --out output/preview.png
 npx dbs render scenario.yaml --out output/film.mp4
 ```
 
-`preview`의 로컬 주소를 브라우저에서 열면 영상 출력 없이 화면·음향을 재생하고 프레임·컷을 탐색할 수 있다. 시나리오·지도·음원 저장 시 현재 위치에서 일시정지해 반영하며, 오류가 있으면 마지막 정상 화면을 유지한다. 종료는 터미널에서 Ctrl+C다.
+`preview`의 로컬 주소를 브라우저에서 열면 영상 출력 없이 화면·음향을 재생하고 프레임·컷을 탐색할 수 있다. 시나리오·지도·음원·그리드 저장 시 현재 위치에서 일시정지해 반영하며, 오류가 있으면 마지막 정상 화면을 유지한다. 종료는 터미널에서 Ctrl+C다.
 
 문자 도착 시 엔진의 공통 수신음이 재생된다. `alert.sound: false`로 끄거나 사용자 음원으로 바꾼다. 작품 고유 음원의 제작은 [음향 가이드](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/scenario-writing/references/audio.md)를 참고한다.
 

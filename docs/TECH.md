@@ -79,7 +79,7 @@ PNG 프레임, 포함 범위 MP4, 전체 MP4가 동일 composition과 props를 �
 
 `war-and-emergency-system.md`는 통합방위·동원·징발·전쟁·계엄·긴급명령, `cbrn-and-terror-response.md`는 화생방공격·테러 의심과 관계기관 지원·주민 보호를 다룬다. `civil-defense.md`의 공식 경보 본문과 역할을 나눠 연결한다. `alert-examples.md`의 실제 문자와 `headline-examples.md`의 실제 제목은 날짜·직접 출처·전문/발췌를 붙여 실제 기록과 허구 문안을 구별한다. 사건 자료에서 문안 사례로 이어갈 수 있도록 관련 자료를 상호 연결한다. 관련 요구: F6, P4.
 
-`dbs init [directory]`는 YAML·작품 README와 `audio/`·`audio-code/`·`output/`을 생성한다. 작품이 참조할 음원·합성 기록과 생성 코드는 음향 폴더에, 영상·프레임·검토 자료·게시용 출처 등 산출물은 `output/`에 모은다. 작품 README와 스킬의 CLI 예제는 작품 폴더에서 `--out output/...`을 지정하며 부속 기록은 결과 옆에 둔다. 모든 충돌 경로를 먼저 검사하고 배타적 쓰기로 기존 사용자 파일을 보호한다. 스킬은 사용자 공통 범위에 Vercel skills로 GitHub 경로에서 설치·갱신한다. 작품마다 자동 복사하거나 자체 갱신 관리자를 만들지 않는다. npm 동봉 스킬의 `dbs skill --out`은 오프라인·수동 전달용 내보내기로 유지한다. GitHub 주소로 직접 읽으면 스킬 목록에 설치되지는 않는다. 관련 요구: F5, F6, N3.
+`dbs init [directory]`는 YAML·작품 README와 `src/audio/`·`src/maps/`·`output/audio/`·`output/maps/`를 생성한다. 생성 코드와 직접 준비한 원본 자산은 종류별로 `src/`에 모은다. 생성 음원·합성 기록은 `output/audio/`, 그리드는 `output/maps/`, 영상·프레임·검토 자료·게시용 출처도 `output/`에 저장해 생성 파일 전체를 폴더 단위로 Git 추적에서 제외할 수 있다. 초기화는 `.gitignore`를 생성하거나 수정하지 않는다. 작품 README와 스킬의 CLI 예제는 작품 폴더에서 같은 경로를 사용하며 부속 기록은 결과 옆에 둔다. 중첩 폴더를 포함한 모든 충돌 경로를 먼저 검사하고 배타적 쓰기로 기존 사용자 파일을 보호한다. 폴더는 제작 안내와 초기화의 기본값이며 로더는 시나리오에 지정한 상대 자산 경로를 그대로 사용한다. 스킬은 사용자 공통 범위에 Vercel skills로 GitHub 경로에서 설치·갱신한다. 작품마다 자동 복사하거나 자체 갱신 관리자를 만들지 않는다. npm 동봉 스킬의 `dbs skill --out`은 오프라인·수동 전달용 내보내기로 유지한다. GitHub 주소로 직접 읽으면 스킬 목록에 설치되지는 않는다. 관련 요구: F5, F6, N3.
 
 ## 패키징과 유지보수
 

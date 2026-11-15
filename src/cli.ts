@@ -14,7 +14,7 @@ const program = new Command()
   .version('0.4.1');
 program
   .command('init [directory]')
-  .description('Create a scenario workspace with YAML, audio and output folders; never overwrite files')
+  .description('Create a scenario workspace with YAML, source and output folders; never overwrite files')
   .action(async (directory = '.') => {
     const { initializeWorkspace } = await import('./workspace.js');
     console.log(JSON.stringify({ ok: true, ...(await initializeWorkspace(directory)) }));

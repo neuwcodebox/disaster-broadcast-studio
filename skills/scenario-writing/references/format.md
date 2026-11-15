@@ -2,9 +2,9 @@
 
 ## 독립 작업 공간
 
-Node.js 22 이상을 사용한다. `npm install disaster-broadcast-studio`로 패키지를 설치하며 실행명은 `dbs`다. 전달받은 `.tgz`가 있으면 `npm install /path/to/package.tgz`로도 설치할 수 있다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `audio/`, `audio-code/`, `output/`을 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
+Node.js 22 이상을 사용한다. `npm install disaster-broadcast-studio`로 패키지를 설치하며 실행명은 `dbs`다. 전달받은 `.tgz`가 있으면 `npm install /path/to/package.tgz`로도 설치할 수 있다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `src/audio/`, `src/maps/`, `output/audio/`, `output/maps/`를 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. `.gitignore`는 생성하거나 수정하지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
 
-`audio/`는 작품에서 참조할 음원과 합성 기록, `audio-code/`는 음원 생성 코드, `output/`은 영상·프레임·검토 자료 등 산출물을 두는 폴더다. 아래 명령은 초기화한 작품 폴더에서 실행한다. `--out`의 상대 경로는 현재 작업 폴더 기준이므로 산출물에는 `output/...`을 지정한다. 필요하면 그 아래에 용도별 하위 폴더를 둘 수 있다.
+`src/`는 생성 코드와 직접 준비한 원본 자산을 보관하는 폴더다. 음원은 `src/audio/`, 지도·그리드는 `src/maps/`에 모은다. 코드로 생성한 음원·합성 기록은 `output/audio/`, 그리드는 `output/maps/`에 저장한다. 영상·프레임·검토 자료도 `output/`에 둔다. 생성 파일은 `output/` 전체를 Git 추적에서 제외해 관리할 수 있다. 아래 명령은 초기화한 작품 폴더에서 실행한다. `--out`의 상대 경로는 현재 작업 폴더 기준이다.
 
 ```sh
 npx dbs schema --out output/scenario.schema.json
@@ -183,12 +183,12 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 }
 ```
 
-이 파일을 작품 폴더의 `maps/early.json`에 두었다면 다음처럼 참조한다. 컷 `opening`은 20초 이상이어야 하며 두 번째 파일은 같은 범위의 다음 관측 화면으로 준비한다.
+이 파일을 작품 폴더의 `output/maps/early.json`에 두었다면 다음처럼 참조한다. 컷 `opening`은 20초 이상이어야 하며 두 번째 파일은 같은 범위의 다음 관측 화면으로 준비한다.
 
 ```yaml
 assets:
-  field-early: {path: maps/early.json, source: "작품용 합성 분포", license: CC0}
-  field-later: {path: maps/later.json, source: "작품용 합성 분포", license: CC0}
+  field-early: {path: output/maps/early.json, source: "작품용 합성 분포", license: CC0}
+  field-later: {path: output/maps/later.json, source: "작품용 합성 분포", license: CC0}
 events:
   - {id: field-early, type: grid, cut: opening, at: 5, duration: 10, asset: field-early}
   - {id: field-later, type: grid, cut: opening, at: 15, duration: 5, asset: field-later}
@@ -196,12 +196,11 @@ events:
 
 표시 시점마다 별도 파일을 준비하고 이전 이벤트의 종료와 다음 이벤트의 시작을 맞춰 교체한다. 겹치는 구간에는 타임라인 순서대로 합성한다. 셀의 알파에 이벤트 `opacity`와 페이드가 곱해진다. 자동 보간이나 수치·지점명·격자선·범례는 생성하지 않는다. 필요한 범례는 기존 `legend`로 별도 작성한다. 색면은 지역 강조·선·마커 아래에 놓이며 메인·보조 지도에서 각각 같은 지리 좌표로 투영된다. 시간 도약 중에는 이전 색면을 유지하고 임의 탐색에서도 해당 시점의 파일을 복원한다.
 
-큰 배열은 직접 나열하기보다 코드로 생성한다. [실행 예제](../examples/grid.mjs)를 작품 폴더의 `grid.mjs`로 복사해 수정할 수 있다. 이 예제는 동일한 범위에서 시간에 따라 달라지는 합성 색면을 만들며 기존 파일을 덮어쓰지 않는다.
+큰 배열은 직접 나열하기보다 코드로 생성한다. [실행 예제](../examples/grid.mjs)를 작품 폴더의 `src/maps/grid.mjs`로 복사해 수정할 수 있다. 이 예제는 동일한 범위에서 시간에 따라 달라지는 합성 색면을 만들며 기존 파일을 덮어쓰지 않는다.
 
 ```sh
-mkdir -p maps
-node grid.mjs maps/early.json 0
-node grid.mjs maps/later.json 1
+node src/maps/grid.mjs output/maps/early.json 0
+node src/maps/grid.mjs output/maps/later.json 1
 npx dbs validate scenario.yaml
 npx dbs frame scenario.yaml --frame 480 --out output/grid-check.png
 ```
