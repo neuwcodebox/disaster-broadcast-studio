@@ -19,7 +19,7 @@ node scripts/build-map-assets.mjs /path/HangJeongDong_ver20260701.geojson /path/
 
 공공누리 1유형은 저작자·출처를 요구하지만 영상 내 고정 위치를 지정하지 않는다. [CC BY 4.0 제3조(a)(2)](https://creativecommons.org/licenses/by/4.0/legalcode)는 매체·상황에 합리적인 방식의 표시와 링크를 허용한다. [CC BY 3.0 IGO 제4조(b)](https://creativecommons.org/licenses/by/3.0/igo/legalcode)도 매체에 합리적인 저작자·출처·가공 표시를 요구하며, 공동 기여자 크레딧을 별도로 넣으면 그 안에서 동등한 비중으로 표시해야 한다. 이 배포물의 기본 지도에는 영상 위 고정 워터마크 의무가 확인되지 않아 공개 설명란 크레딧 방식을 사용한다. 기계 메타데이터만 남기고 게시 출처를 생략하지 않는다. Natural Earth는 public domain이며 OFL은 폰트 파일 재배포 조건이다. 사용자 경계 파일은 WGS84 Polygon/MultiPolygon FeatureCollection이며 `map.attribution`에 필요한 출처표시를 지정한다. 지도는 한반도와 주변 동아시아를 대상으로 한다.
 
-상태·뉴스·방송 안내·등급별 재난문자 기본음은 직접 합성한 CC0 음원이며 [생성 코드·이용조건](audio/README.md)을 동봉한다. 긴급·위급재난은 EAS풍 경보의 불협화음과 반복 패턴을 사용한다. 작품 고유의 로컬 음원에는 각각 `source`, `license`를 기록한다. 기술 검증 스크립트의 사인파도 직접 생성한 CC0 음원이다.
+상태·방송 안내·등급별 재난문자 기본음과 선택용 뉴스 음원은 직접 합성한 CC0 음원이며 [생성 코드·이용조건](audio/README.md)을 동봉한다. 긴급·위급재난은 EAS풍 경보의 불협화음과 반복 패턴을 사용한다. 작품 고유의 로컬 음원에는 각각 `source`, `license`를 기록한다. 기술 검증 스크립트의 사인파도 직접 생성한 CC0 음원이다.
 
 Remotion은 [사용 주체별 라이선스 조건](https://www.remotion.dev/pricing)이 적용된다. MapLibre GL JS는 BSD-3-Clause, React는 MIT다.
 

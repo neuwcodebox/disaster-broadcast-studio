@@ -62,7 +62,7 @@ const news = z
   .object({
     ...span,
     type: z.literal('news'),
-    sound: notificationSound,
+    sound: notificationSound.default(false),
     source: id,
     headline: z.string().min(1).max(160),
     publishedAt: timestamp.optional(),

@@ -41,7 +41,7 @@ test('status sounds follow actual changes, with one cue on replacement or clear'
   assert.deepEqual(notificationSounds(timeline([status(1, 2), { ...status(3, 2, ''), sound: false }])).map((s) => s.start), [60]);
 });
 
-test('news and bulletin have default cues; every notification supports opt-out and custom assets', () => {
+test('news is silent by default; notifications support explicit cues, opt-out and custom assets', () => {
   const events = [
     { type: 'news', source: 'a', headline: '뉴스', duration: 1 },
     { type: 'bulletin', source: 'a', heading: '안내', text: '본문', duration: 1 },
@@ -49,8 +49,11 @@ test('news and bulletin have default cues; every notification supports opt-out a
     { type: 'alert', sender: 'a', text: '문자' },
   ];
   const sounds = notificationSounds(timeline(events));
-  assert.equal(sounds[0].asset, defaultSounds.news.asset);
-  assert.equal(sounds[1].asset, defaultSounds.bulletin.asset);
+  assert.ok(sounds.every((s) => s.asset !== defaultSounds.news.asset));
+  assert.equal(sounds[0].asset, defaultSounds.bulletin.asset);
+  const optedIn = notificationSounds(timeline([{ ...events[0], sound: 'default' }]));
+  assert.equal(optedIn.length, 1);
+  assert.equal(optedIn[0].asset, defaultSounds.news.asset);
   assert.deepEqual(notificationSounds(timeline(events.map((e) => ({ ...e, sound: false })))), []);
   const custom = notificationSounds(timeline(events.map((e) => ({ ...e, sound: { asset: 'own', duration: 0.8, volume: 0.4 } }))));
   assert.ok(custom.every((s) => s.asset === 'own' && s.frames === 48 && s.volume === 0.4));
@@ -79,10 +82,16 @@ test('bundled WAVs match cue durations, have headroom and increasing alert RMS',
   assert.ok(rms.bulletin > rms.news * 1.5, 'bulletin should be more prominent than news');
 });
 
-test('loader includes used defaults and credits even when there are no alerts', async () => {
+test('silent news loads no sound or credit; explicit news sound opts in to both', async () => {
   const dir = await mkdtemp('/tmp/dbs-sounds-');
   try {
     const raw = { ...input([{ type: 'news', source: 'a', headline: '뉴스', duration: 1 }]), assets: {} };
+    await writeFile(`${dir}/scenario.json`, JSON.stringify(raw));
+    const silent = await loadScenario(`${dir}/scenario.json`);
+    assert.deepEqual(notificationSounds(silent.timeline), []);
+    assert.deepEqual(silent.assetPaths, {});
+    assert.doesNotMatch(makeCredits(silent.timeline.scenario, []).text, /기본 알림·경보 효과음/);
+    raw.events[0].sound = 'default';
     await writeFile(`${dir}/scenario.json`, JSON.stringify(raw));
     const loaded = await loadScenario(`${dir}/scenario.json`);
     assert.deepEqual(Object.keys(loaded.assetPaths), [defaultSounds.news.asset]);
