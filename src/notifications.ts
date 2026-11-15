@@ -6,8 +6,8 @@ export const defaultSounds = {
   '긴급재난': { asset: '__dbs_alert_urgent', file: 'alert-urgent.wav', duration: 2.4, volume: 0.85 },
   '위급재난': { asset: '__dbs_alert_critical', file: 'alert-critical.wav', duration: 4.2, volume: 0.95 },
   status: { asset: '__dbs_status', file: 'status.wav', duration: 0.38, volume: 0.65 },
-  news: { asset: '__dbs_news', file: 'news.wav', duration: 0.7, volume: 0.65 },
-  bulletin: { asset: '__dbs_bulletin', file: 'bulletin.wav', duration: 1, volume: 0.7 },
+  news: { asset: '__dbs_news', file: 'news.wav', duration: 0.28, volume: 0.65 },
+  bulletin: { asset: '__dbs_bulletin', file: 'bulletin.wav', duration: 1, volume: 0.9 },
 } as const;
 
 export function notificationSounds(timeline: Timeline) {

@@ -76,6 +76,7 @@ test('bundled WAVs match cue durations, have headroom and increasing alert RMS',
   }
   assert.ok(rms['긴급재난'] > rms['안전안내'] * 1.4);
   assert.ok(rms['위급재난'] > rms['긴급재난'] * 1.2);
+  assert.ok(rms.bulletin > rms.news * 1.5, 'bulletin should be more prominent than news');
 });
 
 test('loader includes used defaults and credits even when there are no alerts', async () => {
