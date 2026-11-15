@@ -268,3 +268,44 @@ test('rapid identical messages do not repeat reading warnings; changed content s
   assert.ok((await loadScenario(file)).warnings.some(w=>w.includes('repeat0')));
  }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test('references must name declared agencies and assets, including prototype property names', () => {
+  const raw = input();
+  for (const event of [
+    { id: 'bad', type: 'alert', cut: 'first', at: 0, sender: 'constructor', text: '안내' },
+    { id: 'bad', type: 'news', cut: 'first', at: 0, duration: 1, source: 'toString', headline: '소식' },
+    { id: 'bad', type: 'bulletin', cut: 'first', at: 0, duration: 1, source: 'constructor', heading: '안내', text: '본문' },
+    { id: 'bad', type: 'audio', cut: 'first', at: 0, duration: 1, asset: 'constructor' },
+    { id: 'bad', type: 'alert', cut: 'first', at: 0, sender: 'city', text: '안내', sound: { asset: 'toString', duration: 1 } },
+  ]) {
+    assert.throws(() => compile(scenarioSchema.parse({ ...raw, events: [event] }), new Set()), /unknown (agency|asset)/);
+  }
+  const scenario = scenarioSchema.parse({ ...raw, agencies: { constructor: '명시한 기관' }, events: [
+    { id: 'declared', type: 'alert', cut: 'first', at: 0, sender: 'constructor', text: '안내' },
+  ] });
+  assert.doesNotThrow(() => compile(scenario, new Set()));
+});
+
+test('region fades cannot exceed the authored event duration', () => {
+  const scenario = scenarioSchema.parse({ ...input(), events: [
+    { id: 'region', type: 'region', cut: 'first', at: 0, duration: 2, regions: ['47190'], fadeIn: 1, fadeOut: 2 },
+  ] });
+  assert.throws(() => compile(scenario, new Set(['47190'])), /region.*fades exceed duration/);
+});
+
+test('reading warnings exclude all five seconds of the opening', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'dbs-reading-'));
+  try {
+    const raw = { ...input(), cuts: input().cuts.slice(0, 1), events: [
+      { id: 'early', type: 'alert', cut: 'first', at: 0, sender: 'city', text: '안내', pageSeconds: 6 },
+    ] };
+    const file = path.join(root, 'scenario.json');
+    await writeFile(file, JSON.stringify(raw));
+    assert.match((await loadScenario(file)).warnings.join('\n'), /early.*allow 6s/);
+    raw.cuts[0].duration = 11;
+    await writeFile(file, JSON.stringify(raw));
+    assert.deepEqual((await loadScenario(file)).warnings, []);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

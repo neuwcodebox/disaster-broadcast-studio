@@ -1,23 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import {
-  AbsoluteFill,
-  Audio,
-  Sequence,
-  staticFile,
-  useCurrentFrame,
-  useDelayRender,
-  cancelRender,
-} from 'remotion';
+import React from 'react';
+import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import type { FeatureCollection } from 'geojson';
 import type { Timeline } from '../scenario.js';
-import { FPS, pages } from '../scenario.js';
+import { FPS } from '../scenario.js';
 import type { Regions } from '../load.js';
-import { stateAt, clock, envelope, receiptHighlights, statusEntry, shutdownAt } from '../timeline.js';
+import {
+  stateAt,
+  clock,
+  envelope,
+  receiptHighlights,
+  statusEntry,
+  shutdownAt,
+} from '../timeline.js';
 import { AlertHistory } from './Alerts.js';
 import { BroadcastMap } from './Map.js';
-import {SignalEffects, signalLevels} from './SignalEffects.js';
-import {notificationSounds} from '../notifications.js';
-import { fonts, bodyFont, numberFont } from './fonts.js';
+import { SignalEffects, signalLevels } from './SignalEffects.js';
+import { AudioTrack } from './AudioTrack.js';
+import { Bulletin } from './Bulletin.js';
+import { useBundledFonts } from './useBundledFonts.js';
+import { bodyFont, numberFont } from './fonts.js';
 export type BroadcastProps = {
   timeline: Timeline;
   regions: Regions;
@@ -31,58 +32,31 @@ export function Broadcast(props: BroadcastProps) {
   const frame = useCurrentFrame(),
     state = stateAt(timeline, frame),
     news = state.news;
-  const { delayRender, continueRender } = useDelayRender();
-  const [fontHandle] = useState(() => delayRender('Loading bundled Korean font'));
-  useEffect(() => {
-    const links = fonts.flatMap((font) =>
-      font.weights.map((weight) => {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = staticFile(`fonts/${font.id}-${weight}.css`);
-        document.head.append(link);
-        return link;
-      }),
-    );
-    Promise.all(
-      links.map(
-        (link) =>
-          new Promise<void>((resolve, reject) => {
-            link.onload = () => resolve();
-            link.onerror = () => reject(Error('Bundled font CSS unavailable'));
-          }),
-      ),
-    )
-      .then(() =>
-        Promise.all(
-          fonts.flatMap((font) =>
-            font.weights.map((weight) =>
-              document.fonts.load(
-                `${weight} 28px "${font.family}"`,
-                font.id === 'mono'
-                  ? '0123456789:.- /+'
-                  : JSON.stringify(timeline.scenario) +
-                      ' 재난문자 수신 이력 발생 발표 이전 정정 안전안내 긴급재난 위급재난',
-              ),
-            ),
-          ),
-        ),
-      )
-      .then(() => document.fonts.ready)
-      .then(() => continueRender(fontHandle))
-      .catch(cancelRender);
-    return () => links.forEach((link) => link.remove());
-  }, []);
+  useBundledFonts(JSON.stringify(timeline.scenario));
   const status = state.visible.find((e) => e.type === 'status');
   const bulletin = state.visible.find((e) => e.type === 'bulletin');
   const inset = state.visible.find((e) => e.type === 'inset');
   const legend = state.visible.find((e) => e.type === 'legend');
   const signal = signalLevels(state.visible, frame);
-  const mapEvents=[...state.visible,...receiptHighlights(timeline,state.contentFrame)];
-  const entry=statusEntry(state.contentFrame,status?.start??0);
-  const shutdown=shutdownAt(state.visible,frame);
+  const mapEvents = [...state.visible, ...receiptHighlights(timeline, state.contentFrame)];
+  const entry = statusEntry(state.contentFrame, status?.start ?? 0);
+  const shutdown = shutdownAt(state.visible, frame);
   return (
-    <AbsoluteFill style={{ filter: signal.chromatic > 0 ? 'url(#dbs-chromatic)' : undefined, background: shutdown ? '#000' : '#080b0d', fontFamily: bodyFont, color: '#dce1e5' }}>
-      <AbsoluteFill style={{ opacity: shutdown?.black ? 0 : state.opacity, transform: shutdown ? `scale(${shutdown.x},${shutdown.y})` : undefined, transformOrigin: '50% 50%' }}>
+    <AbsoluteFill
+      style={{
+        filter: signal.chromatic > 0 ? 'url(#dbs-chromatic)' : undefined,
+        background: shutdown ? '#000' : '#080b0d',
+        fontFamily: bodyFont,
+        color: '#dce1e5',
+      }}
+    >
+      <AbsoluteFill
+        style={{
+          opacity: shutdown?.black ? 0 : state.opacity,
+          transform: shutdown ? `scale(${shutdown.x},${shutdown.y})` : undefined,
+          transformOrigin: '50% 50%',
+        }}
+      >
         <header
           style={{
             position: 'absolute',
@@ -101,8 +75,11 @@ export function Broadcast(props: BroadcastProps) {
               <span
                 key={`${status.id}-${i}`}
                 style={{
-                  opacity: entry.opacity, transform: `translateY(${entry.offset}px)`,
-                  background: `${item.color}${Math.round(entry.glow*255).toString(16).padStart(2,'0')}`,
+                  opacity: entry.opacity,
+                  transform: `translateY(${entry.offset}px)`,
+                  background: `${item.color}${Math.round(entry.glow * 255)
+                    .toString(16)
+                    .padStart(2, '0')}`,
                   border: `1px solid ${item.color}`,
                   color: item.color,
                   padding: '3px 10px',
@@ -134,26 +111,53 @@ export function Broadcast(props: BroadcastProps) {
             {clock(state.displayEpoch, timeline.scenario.timezone, true)}
           </time>
         </header>
-        <main style={{ position: 'absolute', left: 0, top: 49, right: 640, bottom: 93 }}>
+        <main
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 49,
+            right: 640,
+            bottom: 93,
+          }}
+        >
           <BroadcastMap
             camera={state.camera}
-            moving={state.visible.some((e) => e.type === 'camera')}
             countries={countries}
             regions={regions}
             provinces={provinces}
             events={mapEvents}
             frame={state.contentFrame}
           />
-          {legend?.type === 'legend' && <div style={{ position: 'absolute', left: 24, bottom: 24,
-            display: 'flex', flexDirection: 'column', gap: 10, background: '#0b0e10ed',
-            padding: '14px 18px', fontSize: 21, color: '#d0d5da' }}>
-            {legend.items.map((item, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ width: 23, height: item.symbol === 'line' ? 0 : 16,
-                background: item.symbol === 'fill' ? item.color : 'transparent',
-                border: item.symbol === 'fill' ? 'none' : `2px solid ${item.color}` }} />
-              <span>{item.text}</span>
-            </div>)}
-          </div>}
+          {legend?.type === 'legend' && (
+            <div
+              style={{
+                position: 'absolute',
+                left: 24,
+                bottom: 24,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                background: '#0b0e10ed',
+                padding: '14px 18px',
+                fontSize: 21,
+                color: '#d0d5da',
+              }}
+            >
+              {legend.items.map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span
+                    style={{
+                      width: 23,
+                      height: item.symbol === 'line' ? 0 : 16,
+                      background: item.symbol === 'fill' ? item.color : 'transparent',
+                      border: item.symbol === 'fill' ? 'none' : `2px solid ${item.color}`,
+                    }}
+                  />
+                  <span>{item.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
           {inset?.type === 'inset' && (
             <div
               style={{
@@ -205,65 +209,13 @@ export function Broadcast(props: BroadcastProps) {
         >
           <AlertHistory timeline={timeline} frame={state.contentFrame} />
         </aside>
-        {bulletin?.type === 'bulletin' &&
-          (() => {
-            const chunks = pages(bulletin.text);
-            const page =
-              Math.floor((frame - bulletin.start) / FPS / bulletin.pageSeconds) % chunks.length;
-            return (
-              <section
-                style={{
-                  position: 'absolute',
-                  top: 49,
-                  bottom: 93,
-                  left: 0,
-                  right: 0,
-                  background: '#0a0d0f',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  padding: '50px 190px',
-                }}
-              >
-                <div style={{ fontSize: 23, color: '#9ba5ac', marginBottom: 32 }}>
-                  {timeline.scenario.agencies[bulletin.source]}
-                </div>
-                <h2
-                  style={{
-                    fontSize: 46,
-                    fontWeight: 600,
-                    color: bulletin.color,
-                    margin: '0 0 32px',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {bulletin.heading}
-                </h2>
-                <div
-                  style={{
-                    fontSize: 34,
-                    lineHeight: 1.9,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'keep-all',
-                  }}
-                >
-                  {chunks[page]}
-                </div>
-                {chunks.length > 1 && (
-                  <div
-                    style={{
-                      fontSize: 18,
-                      marginTop: 30,
-                      color: '#8c969d',
-                      fontFamily: numberFont,
-                    }}
-                  >
-                    {page + 1} / {chunks.length}
-                  </div>
-                )}
-              </section>
-            );
-          })()}
+        {bulletin && (
+          <Bulletin
+            event={bulletin}
+            source={timeline.scenario.agencies[bulletin.source]}
+            frame={state.contentFrame}
+          />
+        )}
         <footer
           style={{
             position: 'absolute',
@@ -319,7 +271,9 @@ export function Broadcast(props: BroadcastProps) {
         </footer>
       </AbsoluteFill>
       {state.visible
-        .filter((e) => e.type === 'screen' && ['blackout', 'flash', 'interference'].includes(e.effect))
+        .filter(
+          (e) => e.type === 'screen' && ['blackout', 'flash', 'interference'].includes(e.effect),
+        )
         .map((event) => {
           if (event.type !== 'screen') return null;
           const opacity =
@@ -341,8 +295,21 @@ export function Broadcast(props: BroadcastProps) {
             />
           );
         })}
-      {shutdown?.line && <div style={{position:'absolute',top:'50%',left:'50%',height:2,width:`${shutdown.x*100}%`,transform:'translate(-50%,-50%)',background:'#dce5e9',boxShadow:'0 0 10px #a9c9db'}}/>}
-      <SignalEffects frame={frame} seed={timeline.scenario.seed} levels={signal}/>
+      {shutdown?.line && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            height: 2,
+            width: `${shutdown.x * 100}%`,
+            transform: 'translate(-50%,-50%)',
+            background: '#dce5e9',
+            boxShadow: '0 0 10px #a9c9db',
+          }}
+        />
+      )}
+      <SignalEffects frame={frame} seed={timeline.scenario.seed} levels={signal} />
       {frame < openingFrames && (
         <AbsoluteFill
           style={{
@@ -378,28 +345,7 @@ export function Broadcast(props: BroadcastProps) {
           </div>
         </AbsoluteFill>
       )}
-      {notificationSounds(timeline).map(event=><Sequence key={event.id} from={event.start} durationInFrames={event.frames}><Audio src={staticFile(audio[event.asset])} volume={timeline.events.some(e=>e.type==='silence'&&e.start<=frame&&frame<e.end)?0:event.volume}/></Sequence>)}
-      {timeline.events
-        .filter((e) => e.type === 'audio')
-        .map((event) => {
-          if (event.type !== 'audio') return null;
-          return (
-            <Sequence key={event.id} from={event.start} durationInFrames={event.end - event.start}>
-              <Audio
-                src={staticFile(audio[event.asset])}
-                trimBefore={Math.round(event.offset * FPS)}
-                volume={
-                  timeline.events.some(
-                    (e) => e.type === 'silence' && e.start <= frame && frame < e.end,
-                  )
-                    ? 0
-                    : event.volume *
-                      envelope(frame, event.start, event.end, event.fadeIn, event.fadeOut)
-                }
-              />
-            </Sequence>
-          );
-        })}
+      <AudioTrack timeline={timeline} audio={audio} frame={frame} />
     </AbsoluteFill>
   );
 }

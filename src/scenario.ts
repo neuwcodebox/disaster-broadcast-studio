@@ -14,7 +14,11 @@ const camera = z
   })
   .strict();
 const timed = { id, cut: id, at: seconds };
-const span = { ...timed, duration: z.number().positive(), carry: z.boolean().default(false) };
+const span = {
+  ...timed,
+  duration: z.number().positive(),
+  carry: z.boolean().default(false),
+};
 const alert = z
   .object({
     ...timed,
@@ -23,13 +27,30 @@ const alert = z
     text: z.string().min(1).max(4000),
     level: z.enum(['안전안내', '긴급재난', '위급재난']).default('안전안내'),
     regions: z.array(z.string()).default([]),
-    mapHighlight: z.union([z.literal(false), z.object({
-      duration: z.number().positive().default(2.4),
-      color: color.default('#d6e2ec'),
-    }).strict()]).default({duration: 2.4, color: '#d6e2ec'}),
-    sound: z.union([z.literal(false), z.literal('default'), z.object({
-      asset: id, duration: z.number().positive(), volume: z.number().min(0).max(2).default(0.8),
-    }).strict()]).default('default'),
+    mapHighlight: z
+      .union([
+        z.literal(false),
+        z
+          .object({
+            duration: z.number().positive().default(2.4),
+            color: color.default('#d6e2ec'),
+          })
+          .strict(),
+      ])
+      .default({ duration: 2.4, color: '#d6e2ec' }),
+    sound: z
+      .union([
+        z.literal(false),
+        z.literal('default'),
+        z
+          .object({
+            asset: id,
+            duration: z.number().positive(),
+            volume: z.number().min(0).max(2).default(0.8),
+          })
+          .strict(),
+      ])
+      .default('default'),
     corrects: id.optional(),
     occurredAt: timestamp.optional(),
     publishedAt: timestamp.optional(),
@@ -99,14 +120,21 @@ const highlight = z
     pulse: z.boolean().default(false),
   })
   .strict();
-const legend = z.object({
-  ...span,
-  type: z.literal('legend'),
-  items: z.array(z.object({
-    text: z.string().min(1).max(80), color,
-    symbol: z.enum(['fill', 'outline', 'line']).default('fill'),
-  }).strict()),
-}).strict();
+const legend = z
+  .object({
+    ...span,
+    type: z.literal('legend'),
+    items: z.array(
+      z
+        .object({
+          text: z.string().min(1).max(80),
+          color,
+          symbol: z.enum(['fill', 'outline', 'line']).default('fill'),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
 const marker = z
   .object({
     ...span,
@@ -126,7 +154,12 @@ const cameraEvent = z
   })
   .strict();
 const inset = z
-  .object({ ...span, type: z.literal('inset'), camera, title: z.string().max(80) })
+  .object({
+    ...span,
+    type: z.literal('inset'),
+    camera,
+    title: z.string().max(80),
+  })
   .strict();
 const audio = z
   .object({
@@ -144,7 +177,16 @@ const screen = z
   .object({
     ...span,
     type: z.literal('screen'),
-    effect: z.enum(['blackout', 'flash', 'interference', 'noise', 'scanlines', 'chromatic', 'dropout', 'shutdown']),
+    effect: z.enum([
+      'blackout',
+      'flash',
+      'interference',
+      'noise',
+      'scanlines',
+      'chromatic',
+      'dropout',
+      'shutdown',
+    ]),
     intensity: z.number().min(0).max(1).default(1),
     fadeIn: seconds.default(0),
     fadeOut: seconds.default(0),
@@ -171,7 +213,11 @@ export const scenarioSchema = z
       )
       .default({}),
     map: z
-      .object({ camera, regions: z.string().optional(), attribution: z.string().min(1).optional() })
+      .object({
+        camera,
+        regions: z.string().optional(),
+        attribution: z.string().min(1).optional(),
+      })
       .strict(),
     cuts: z
       .array(
@@ -212,8 +258,16 @@ export const scenarioSchema = z
 export type Scenario = z.infer<typeof scenarioSchema>;
 export type Event = Scenario['events'][number];
 export type Camera = Scenario['map']['camera'];
-export type CompiledEvent = Event & { start: number; end: number; order: number };
-export type Cut = Scenario['cuts'][number] & { start: number; end: number; epoch: number };
+export type CompiledEvent = Event & {
+  start: number;
+  end: number;
+  order: number;
+};
+export type Cut = Scenario['cuts'][number] & {
+  start: number;
+  end: number;
+  epoch: number;
+};
 export type Timeline = {
   scenario: Scenario;
   fps: number;
@@ -258,7 +312,12 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
     const n = frames(c.duration);
     if (n < 1) errors.push(`cuts[${i}].duration: shorter than one frame`);
     if (c.fadeIn + c.fadeOut > c.duration) errors.push(`cuts[${i}]: fades exceed duration`);
-    const cut = { ...c, start: cursor, end: cursor + n, epoch: Date.parse(c.storyTime) };
+    const cut = {
+      ...c,
+      start: cursor,
+      end: cursor + n,
+      epoch: Date.parse(c.storyTime),
+    };
     cursor += n;
     return cut;
   });
@@ -290,9 +349,9 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       for (const r of e.regions)
         if (!regionIds.has(r)) errors.push(`${path}.regions: unknown region ${r}`);
     if (e.type === 'alert') {
-      if (typeof e.sound === 'object' && !(e.sound.asset in scenario.assets))
+      if (typeof e.sound === 'object' && !Object.hasOwn(scenario.assets, e.sound.asset))
         errors.push(`${path}.sound.asset: unknown asset ${e.sound.asset}`);
-      if (!(e.sender in scenario.agencies))
+      if (!Object.hasOwn(scenario.agencies, e.sender))
         errors.push(`${path}.sender: unknown agency ${e.sender}`);
       if (e.corrects) {
         const prev = scenario.events.find((x) => x.id === e.corrects);
@@ -305,13 +364,13 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       (e.points[0][0] !== e.points.at(-1)![0] || e.points[0][1] !== e.points.at(-1)![1])
     )
       errors.push(`${path}.points: polygon ring must be closed`);
-    if ((e.type === 'news' || e.type === 'bulletin') && !(e.source in scenario.agencies))
+    if ((e.type === 'news' || e.type === 'bulletin') && !Object.hasOwn(scenario.agencies, e.source))
       errors.push(`${path}.source: unknown agency ${e.source}`);
     if (e.type === 'audio') {
-      if (!(e.asset in scenario.assets)) errors.push(`${path}.asset: unknown asset ${e.asset}`);
-      if (e.fadeIn + e.fadeOut > e.duration) errors.push(`${path}: fades exceed duration`);
+      if (!Object.hasOwn(scenario.assets, e.asset))
+        errors.push(`${path}.asset: unknown asset ${e.asset}`);
     }
-    if (e.type === 'screen' && e.fadeIn + e.fadeOut > e.duration)
+    if ('fadeIn' in e && e.fadeIn + e.fadeOut > e.duration)
       errors.push(`${path}: fades exceed duration`);
     return [{ ...e, start, end, order: i }];
   });
@@ -323,7 +382,7 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
     }
   }
   for (const cut of cuts) {
-    if (frames(cut.clockTransition) >= cut.end-cut.start)
+    if (frames(cut.clockTransition) >= cut.end - cut.start)
       errors.push(`cuts (${cut.id}).clockTransition: must be shorter than cut`);
     if (cut.start === 0 && cut.clockTransition)
       errors.push(`cuts (${cut.id}).clockTransition: requires a previous cut`);

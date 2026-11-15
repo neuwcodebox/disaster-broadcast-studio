@@ -3,7 +3,7 @@ import * as maplibregl from 'maplibre-gl';
 import type { Map as MapInstance, StyleSpecification } from 'maplibre-gl';
 import { useDelayRender, cancelRender, staticFile } from 'remotion';
 import type { FeatureCollection } from 'geojson';
-import type { Camera, CompiledEvent } from '../scenario.js';
+import { FPS, type Camera, type CompiledEvent } from '../scenario.js';
 import type { Regions } from '../load.js';
 import {regionOpacity} from '../timeline.js';
 const style = (
@@ -100,7 +100,7 @@ function arrangeLabels(container: HTMLDivElement) {
 }
 export function BroadcastMap({camera,countries,regions,provinces,events,frame,inset=false}: {
   camera:Camera;countries:FeatureCollection;regions:Regions;provinces:FeatureCollection;
-  events:CompiledEvent[];frame:number;inset?:boolean;moving?:boolean;
+  events:CompiledEvent[];frame:number;inset?:boolean;
 }) {
   const container=useRef<HTMLDivElement>(null),map=useRef<MapInstance|null>(null);
   const snapshot=useRef<HTMLCanvasElement>(null),markers=useRef<HTMLDivElement>(null);
@@ -190,7 +190,7 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
               );
             if (e.type !== 'line') return null;
             const progress = e.drawSeconds
-              ? Math.min(1, (frame - e.start) / 60 / e.drawSeconds)
+              ? Math.min(1, (frame - e.start) / FPS / e.drawSeconds)
               : 1;
             const maskId = `${inset ? 'inset' : 'main'}-${e.id}`;
             return (
@@ -257,7 +257,7 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
           .filter((e) => e.type === 'marker')
           .map((e) => {
             if (e.type !== 'marker') return null;
-            const age = (frame - e.start) / 60,
+            const age = (frame - e.start) / FPS,
               ring = e.effect === 'ring',
               size = ring ? 24 + Math.min(age, 3) * 25 : 13;
             return (

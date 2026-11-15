@@ -1,8 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import {notificationAsset} from './notifications.js';
+import { notificationAsset } from './notifications.js';
 import { readBundledJson, packageRoot } from './assets.js';
-export { packageRoot } from './assets.js';
 import { parseDocument } from 'yaml';
 import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
 import { compile, scenarioSchema, alertText, pages, FPS, type Timeline } from './scenario.js';
@@ -63,7 +62,9 @@ export async function loadScenario(file: string): Promise<Loaded> {
   const absolute = path.resolve(file),
     root = path.dirname(absolute);
   try {
-    const doc = parseDocument(await readFile(absolute, 'utf8'), { uniqueKeys: true });
+    const doc = parseDocument(await readFile(absolute, 'utf8'), {
+      uniqueKeys: true,
+    });
     if (doc.errors.length) throw Error(doc.errors.map((e) => e.message).join('\n'));
     const result = scenarioSchema.safeParse(doc.toJS());
     if (!result.success)
@@ -85,22 +86,28 @@ export async function loadScenario(file: string): Promise<Loaded> {
     const assetPaths: Record<string, string> = {};
     for (const [key, asset] of Object.entries(scenario.assets))
       assetPaths[key] = await localFile(root, asset.path, `assets.${key}.path`);
-    if(timeline.events.some(e=>e.type==='alert'&&e.sound==='default'))
-      assetPaths[notificationAsset]=path.join(packageRoot,'assets/audio/notification.wav');
+    if (timeline.events.some((e) => e.type === 'alert' && e.sound === 'default'))
+      assetPaths[notificationAsset] = path.join(packageRoot, 'assets/audio/notification.wav');
     const warnings: string[] = [];
     const alerts = timeline.events.filter((e) => e.type === 'alert');
     for (let i = 0; i < alerts.length; i++) {
       const a = alerts[i];
       if (a.type !== 'alert') continue;
-      const nextAlert=alerts[i+1];
-      if(nextAlert?.type==='alert'&&nextAlert.text===a.text&&nextAlert.sender===a.sender&&nextAlert.level===a.level&&nextAlert.corrects===a.corrects)continue;
-      const next = nextAlert?.start ?? timeline.durationInFrames;
+      const nextAlert = alerts[i + 1];
       if (
-        next - Math.max(a.start, 180) <
-        pages(alertText(scenario.agencies[a.sender], a.text)).length * a.pageSeconds * FPS
+        nextAlert?.type === 'alert' &&
+        nextAlert.text === a.text &&
+        nextAlert.sender === a.sender &&
+        nextAlert.level === a.level &&
+        nextAlert.corrects === a.corrects
       )
+        continue;
+      const next = nextAlert?.start ?? timeline.durationInFrames;
+      const readingSeconds =
+        pages(alertText(scenario.agencies[a.sender], a.text)).length * a.pageSeconds;
+      if (next - Math.max(a.start, 5 * FPS) < readingSeconds * FPS)
         warnings.push(
-          `${a.id}: latest-message reading time is short; allow ${pages(alertText(scenario.agencies[a.sender], a.text)).length * a.pageSeconds}s before the next alert/end`,
+          `${a.id}: latest-message reading time is short; allow ${readingSeconds}s before the next alert/end`,
         );
     }
     return { timeline, regions, root, assetPaths, warnings };

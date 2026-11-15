@@ -2,9 +2,9 @@
 import { Command } from 'commander';
 import { cp, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { loadScenario, packageRoot } from './load.js';
-import { readBundledJson } from './assets.js';
-import { scenarioSchema } from './scenario.js';
+import { loadScenario } from './load.js';
+import { readBundledJson, packageRoot } from './assets.js';
+import { FPS, scenarioSchema } from './scenario.js';
 import { stateAt, clock } from './timeline.js';
 import { makeCredits, type Credit } from './credits.js';
 import { z } from 'zod';
@@ -12,11 +12,12 @@ const program = new Command()
   .name('dbs')
   .description('Text-authored disaster broadcast fiction → 1080p60 video')
   .version('0.1.0');
-program.command('init [directory]')
+program
+  .command('init [directory]')
   .description('Create a scenario workspace with YAML and audio folders; never overwrite files')
   .action(async (directory = '.') => {
     const { initializeWorkspace } = await import('./workspace.js');
-    console.log(JSON.stringify({ ok: true, ...await initializeWorkspace(directory) }));
+    console.log(JSON.stringify({ ok: true, ...(await initializeWorkspace(directory)) }));
   });
 program
   .command('validate <scenario>')
@@ -28,7 +29,7 @@ program
         {
           ok: true,
           frames: data.timeline.durationInFrames,
-          seconds: data.timeline.durationInFrames / 60,
+          seconds: data.timeline.durationInFrames / FPS,
           cuts: data.timeline.cuts.length,
           warnings: data.warnings,
         },
@@ -54,7 +55,10 @@ program
   .action(async (opts) => {
     const data = await readBundledJson<import('geojson').FeatureCollection>('regions.geojson.gz');
     const entries = data.features
-      .map((f) => ({ id: String(f.properties!.SIG_CD), name: String(f.properties!.SIG_KOR_NM) }))
+      .map((f) => ({
+        id: String(f.properties!.SIG_CD),
+        name: String(f.properties!.SIG_KOR_NM),
+      }))
       .filter((f) => !opts.search || `${f.id} ${f.name}`.includes(opts.search));
     if (opts.json) console.log(JSON.stringify(entries, null, 2));
     else for (const f of entries) console.log(`${f.id}\t${f.name}`);
@@ -110,7 +114,8 @@ program
     });
     console.log(path.resolve(opts.out));
   });
-program.command('audio <program>')
+program
+  .command('audio <program>')
   .description('Run a local Tone.js module offline and write PCM16 WAV')
   .option('--assets <directory>', 'Local samples available through asset(relativePath)')
   .requiredOption('-o, --out <path>')
@@ -122,10 +127,18 @@ program.command('audio <program>')
   .option('--overwrite', 'Replace existing output')
   .action(async (file, opts) => {
     const { synthesize } = await import('./audio/render.js');
-    console.log(JSON.stringify({ ok: true, ...await synthesize(file, {
-      ...opts, duration: Number(opts.duration), sampleRate: Number(opts.sampleRate),
-      channels: Number(opts.channels), seed: Number(opts.seed),
-    }) }));
+    console.log(
+      JSON.stringify({
+        ok: true,
+        ...(await synthesize(file, {
+          ...opts,
+          duration: Number(opts.duration),
+          sampleRate: Number(opts.sampleRate),
+          channels: Number(opts.channels),
+          seed: Number(opts.seed),
+        })),
+      }),
+    );
   });
 for (const mode of ['frame', 'render'] as const) {
   const cmd = program
@@ -156,7 +169,13 @@ for (const mode of ['frame', 'render'] as const) {
       from: opts.from !== undefined ? Number(opts.from) : undefined,
       to: opts.to !== undefined ? Number(opts.to) : undefined,
     });
-    console.log(JSON.stringify({ ok: true, output: result, credits: `${result}.credits.txt` }));
+    console.log(
+      JSON.stringify({
+        ok: true,
+        output: result,
+        credits: `${result}.credits.txt`,
+      }),
+    );
   });
 }
 program.parseAsync().catch((e) => {
