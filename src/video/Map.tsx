@@ -7,6 +7,8 @@ import { type Camera, type CompiledEvent } from '../scenario.js';
 import type { Regions } from '../load.js';
 import {regionOpacity} from '../timeline.js';
 import { circleAt, MapShapes, MarkerGlyph } from './map/effects.js';
+import { drawGrid, MapGrids } from './map/grid.js';
+import type { Grid } from '../grid.js';
 const style = (
   countries: FeatureCollection,
   regions: Regions,
@@ -99,12 +101,15 @@ function arrangeLabels(container: HTMLDivElement) {
     occupied.push(rect);
   }
 }
-export function BroadcastMap({camera,countries,regions,provinces,events,frame,inset=false}: {
+export function BroadcastMap({camera,countries,regions,provinces,grids,events,frame,inset=false}: {
   camera:Camera;countries:FeatureCollection;regions:Regions;provinces:FeatureCollection;
+  grids:Record<string,Grid>;
   events:CompiledEvent[];frame:number;inset?:boolean;
 }) {
   const container=useRef<HTMLDivElement>(null),map=useRef<MapInstance|null>(null);
   const snapshot=useRef<HTMLCanvasElement>(null),markers=useRef<HTMLDivElement>(null);
+  const gridLayer=useRef<HTMLDivElement>(null);
+  const drawnGrids=useRef(new WeakMap<HTMLCanvasElement,string>());
   const paths=useRef(new Map<string,string>()),capturedCamera=useRef(''),completed=useRef('');
   const {delayRender,continueRender,cancelRender}=useDelayRender();
   const buffer = useBufferState();
@@ -132,7 +137,8 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
   const ids=[...new Set(regionEvents.flatMap(e=>e.regions))].sort();
   const circles = events.filter(e => e.type === 'circle');
   const circlePoints = circles.map(e => circleAt(e, frame).points);
-  const requestKey=JSON.stringify([cameraKey,ids,events.filter(e=>['marker','circle','zone','line'].includes(e.type)),circlePoints]);
+  const gridEvents = events.filter(e => e.type === 'grid');
+  const requestKey=JSON.stringify([cameraKey,ids,events.filter(e=>['marker','circle','zone','line','grid'].includes(e.type)),circlePoints]);
   useEffect(()=>{
     const m=map.current;if(!m||requestKey===completed.current)return;
     const handle=delayRender(`Projecting map frame ${frame}`);let settled=false,cancelled=false;
@@ -154,6 +160,14 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
           paths.current.set(id,polygons.flatMap(poly=>poly.map(ring=>ring.map((coord,i)=>{
             const p=m.project([coord[0],coord[1]]);return `${i?'L':'M'}${p.x.toFixed(2)},${p.y.toFixed(2)}`;
           }).join('')+'Z')).join(''));
+        }
+        for (const canvas of gridLayer.current?.querySelectorAll<HTMLCanvasElement>('canvas[data-grid-asset]') ?? []) {
+          if (drawnGrids.current.get(canvas) === cameraKey) continue;
+          const asset = canvas.dataset.gridAsset!;
+          if (!Object.hasOwn(grids, asset)) throw Error(`Grid: missing asset ${asset}`);
+          const { clientWidth: width, clientHeight: height } = m.getContainer();
+          drawGrid(canvas, grids[asset], position => m.project(position), width, height, m.getCanvas().width / width);
+          drawnGrids.current.set(canvas, cameraKey);
         }
         if(markers.current){
           for(const el of markers.current.querySelectorAll<HTMLElement>('[data-lng]')){
@@ -182,6 +196,9 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
     <style>{'.maplibregl-canvas {position:absolute;left:0;top:0;}'}</style>
     <div ref={container} style={{position:'absolute',inset:0,opacity:isRendering?0:1,pointerEvents:'none'}}/>
     {isRendering && <canvas ref={snapshot} aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>}
+    <div ref={gridLayer} style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+      <MapGrids events={gridEvents} frame={frame} />
+    </div>
     <svg width="100%" height="100%" style={{position:'absolute',inset:0,pointerEvents:'none'}}>
       <g>{regionEvents.map(e=>e.regions.map(id=><path key={`${e.id}-${id}`} d={paths.current.get(id)} fill={e.color} fillRule="evenodd" opacity={e.fillOpacity*regionOpacity(e,frame)}/>))}</g>
       <g fill="none" strokeLinejoin="round">{regionEvents.map(e=>e.regions.map(id=><path key={`${e.id}-${id}`} d={paths.current.get(id)} stroke={e.strokeColor??e.color} strokeWidth={e.strokeWidth} opacity={e.strokeOpacity*regionOpacity(e,frame,false)}/>))}</g>

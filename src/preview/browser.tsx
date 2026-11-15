@@ -111,7 +111,7 @@ function Preview() {
         <output aria-label="현재 프레임">{frame} / {snapshot.props.timeline.durationInFrames - 1} · {(frame / FPS).toFixed(2)}초</output>
       </div>
       {snapshot.warnings.length > 0 && <p className="warnings">{snapshot.warnings.join('\n')}</p>}
-      <p>재생 버튼으로 화면과 음향을 확인하세요. 시나리오·지도·음원을 저장하면 현재 위치에서 일시정지한 뒤 반영합니다. 종료: 터미널에서 Ctrl+C</p>
+      <p>재생 버튼으로 화면과 음향을 확인하세요. 시나리오·지도·음원·그리드를 저장하면 현재 위치에서 일시정지한 뒤 반영합니다. 종료: 터미널에서 Ctrl+C</p>
     </>}
   </main>;
 }

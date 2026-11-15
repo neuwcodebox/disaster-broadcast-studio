@@ -119,6 +119,14 @@ const zone = z
     opacity: z.number().min(0).max(1).default(0.18),
   })
   .strict();
+const grid = z.object({
+  ...span,
+  type: z.literal('grid'),
+  asset: id,
+  opacity: z.number().min(0).max(1).default(0.6),
+  fadeIn: seconds.default(0),
+  fadeOut: seconds.default(0),
+}).strict();
 const line = z
   .object({
     ...span,
@@ -294,6 +302,7 @@ export const scenarioSchema = z
           chat,
           chatMessage,
           zone,
+          grid,
           line,
           circle,
           highlight,
@@ -403,7 +412,7 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       errors.push(`${path}.source: shorten the display name so the full source fits beside the headline`);
     else if (e.type === 'bulletin' && !fitsText(scenario.agencies[e.source], 48, 2))
       errors.push(`${path}.source: shorten the display name so the full source fits above the notice`);
-    if (e.type === 'audio') {
+    if (e.type === 'audio' || e.type === 'grid') {
       if (!Object.hasOwn(scenario.assets, e.asset))
         errors.push(`${path}.asset: unknown asset ${e.asset}`);
     }

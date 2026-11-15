@@ -32,6 +32,7 @@ export async function prepareBroadcast(
 ): Promise<BroadcastProps> {
   const audio: Record<string, string> = {};
   for (const [id, file] of Object.entries(loaded.assetPaths)) {
+    if (Object.hasOwn(loaded.grids, id)) continue;
     const name = `${audioPrefix}/${id}${path.extname(file)}`;
     await mkdir(path.join(publicDir, audioPrefix), { recursive: true });
     await copyFile(file, path.join(publicDir, name));
@@ -51,5 +52,6 @@ export async function prepareBroadcast(
     countries,
     provinces,
     audio,
+    grids: loaded.grids,
   };
 }

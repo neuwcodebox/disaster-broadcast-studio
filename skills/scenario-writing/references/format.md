@@ -20,11 +20,11 @@ npx dbs credits scenario.yaml --out output/description-credits.txt
 
 프레임은 0부터, 구간 끝은 포함한다. 300~599는 60fps에서 5초다. `inspect`는 해당 프레임의 이야기 시각·카메라·활성 연출·문자 이력을 렌더 없이 반환한다. `regions`는 내장 대한민국 시군구 ID와 이름을 검색한다. 코드를 추측하거나 옛 행정코드를 기억으로 넣지 않는다. 예를 들어 `dbs regions --search 철원`의 결과는 `51780 철원군`이다. `--json`으로 목록을 읽고 문자열 ID를 사용한 뒤 `dbs validate scenario.yaml`로 실제 경계와 대조한다. 내장 목록은 SGIS/admdongkor 2026-07-01 경계를 시군구로 병합한 것이다. 북한의 배경 육지는 시군구 선택 목록이 아니다. 사용자 GeoJSON을 쓰면 그 파일의 Feature ID를 읽어 사용한다. `schema`의 JSON Schema가 정확한 필드 계약이다.
 
-`preview`는 영상 출력 없이 동일한 방송 화면·음향을 로컬 웹 페이지에서 재생한다. 출력한 주소를 브라우저에서 열고 재생·일시정지·탐색 막대·프레임 이동·컷 선택을 사용한다. 기본 주소는 `http://127.0.0.1:3000`이며 `--port <번호>`로 변경한다. `--port 0`은 빈 포트를 선택한다. 시나리오·사용자 지도·참조 음원 저장을 감지해 현재 프레임에서 일시정지한 뒤 반영한다. 전체 길이가 줄면 마지막 프레임으로 제한한다. 오류 중에는 마지막 정상 화면을 유지하고 수정하면 복구한다. Ctrl+C로 서버와 임시 자산을 정리한다. Headless Chromium은 필요하지 않으며, 지도·글꼴 로딩은 재생을 기다린다. 미리보기 재생 속도는 브라우저와 GPU 성능에 따른다.
+`preview`는 영상 출력 없이 동일한 방송 화면·음향을 로컬 웹 페이지에서 재생한다. 출력한 주소를 브라우저에서 열고 재생·일시정지·탐색 막대·프레임 이동·컷 선택을 사용한다. 기본 주소는 `http://127.0.0.1:3000`이며 `--port <번호>`로 변경한다. `--port 0`은 빈 포트를 선택한다. 시나리오·사용자 지도·참조 음원·그리드 저장을 감지해 현재 프레임에서 일시정지한 뒤 반영한다. 전체 길이가 줄면 마지막 프레임으로 제한한다. 오류 중에는 마지막 정상 화면을 유지하고 수정하면 복구한다. Ctrl+C로 서버와 임시 자산을 정리한다. Headless Chromium은 필요하지 않으며, 지도·글꼴 로딩은 재생을 기다린다. 미리보기 재생 속도는 브라우저와 GPU 성능에 따른다.
 
 `frame`·`render`·`audio`는 `--browser`로 Chromium 경로를 지정할 수 있다. 생략하면 Remotion이 Chrome Headless Shell을 관리하며 최초 설치에 인터넷이 필요하다. 이후 렌더는 로컬 자산만 사용한다. `frame`·`render`의 Linux 소프트웨어 렌더는 `--gl swangle`, GPU는 기본 `angle`이다. `--concurrency` 기본값은 2다. `--overwrite` 없이 기존 결과와 부속 `.json`·`.credits.txt`를 덮어쓰지 않는다. 실패 시 종료코드 1과 입력 위치를 반환한다.
 
-영상과 프레임 옆 `.json`은 작품·프레임 범위·자산 출처를 기록하고, `.credits.txt`는 게시용 출처 문안이다. 지도 출처를 화면에 상시 표시하지 않으므로 유튜브 설명란 등에 이 문안을 포함한다. 동봉 지도에 적용되는 출처·제공자·라이선스·가공 내용과 작품 음원 정보를 보존한다. 사용자 자산이 화면 내 표기를 요구하면 그 조건도 별도로 충족한다.
+영상과 프레임 옆 `.json`은 작품·프레임 범위·자산 출처를 기록하고, `.credits.txt`는 게시용 출처 문안이다. 지도 출처를 화면에 상시 표시하지 않으므로 유튜브 설명란 등에 이 문안을 포함한다. 동봉 지도에 적용되는 출처·제공자·라이선스·가공 내용과 작품 자산 정보를 보존한다. 사용자 자산이 화면 내 표기를 요구하면 그 조건도 별도로 충족한다.
 
 ## 최상위 필드
 
@@ -38,7 +38,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | `timezone` | 화면 시계 IANA 시간대. 기본 `Asia/Seoul` |
 | `seed` | 간섭 효과의 결정적 시드. 기본 1 |
 | `agencies` | 기관·뉴스 출처 ID → 표시명 사전 |
-| `assets` | 음원 ID → `{path, source, license}`. 경로는 작품 파일 기준 로컬 파일 |
+| `assets` | 음원·그리드 자산 ID → `{path, source, license}`. 경로는 작품 파일 기준 로컬 파일 |
 | `map` | `{camera, regions?, attribution?}`. 사용자 GeoJSON에는 필요한 출처 전체를 `attribution`에 기재 |
 | `cuts` | 영상에 이어 붙일 컷 목록 |
 | `events` | 내용·연출 이벤트 목록 |
@@ -126,6 +126,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | `legend` | `duration`, `items: [{text, color, symbol?}]`, `carry?` | 지도 하단 범례. symbol은 fill(기본)/outline/line. 동시 1개 |
 | `marker` | `duration`, `position`, `color?`, `label?`, `effect?`, `carry?` | 지점·확대 후 멈추는 링·반복 확산 링. effect는 point(기본)/ring/pulse |
 | `zone` | `duration`, `points`, `color?`, `opacity?`, `carry?` | 행정구역과 다른 작품상의 영역. 처음·끝 좌표가 같은 닫힌 링, 최소 4점. opacity 기본 0.18 |
+| `grid` | `duration`, `asset`, `opacity?`, `fadeIn?`, `fadeOut?`, `carry?` | 로컬 JSON의 지리 격자를 색면으로 표시. opacity 기본 0.6, 페이드 기본 0. 병렬 중첩 가능 |
 | `circle` | `duration`, `center`, `radiusKm`, `color?`, `fillOpacity?`, `strokeWidth?`, `pulse?`, `fadeIn?`, `fadeOut?`, `carry?` | 지리 좌표에 투영한 km 반경 원. radiusKm는 0 초과~2000, fillOpacity 기본 0.12, strokeWidth 기본 2px(0~20), pulse 기본 false |
 | `line` | `duration`, `points`, `color?`, `width?`, `drawSeconds?`, `dashed?`, `flowSpeed?`, `fadeIn?`, `fadeOut?`, `carry?` | 지도에 투영되는 연결·경로·경계선. 최소 2점. width 기본 2px, drawSeconds 기본 0, dashed 기본 false, flowSpeed 기본 0 |
 | `camera` | `duration`, `to`, `ease?`, `carry?` | 카메라 보간. ease smooth(기본)/linear. 완료 위치 유지. 동시 1개 |
@@ -165,6 +166,47 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 문자는 `regions`에 지정된 영역의 채우기를 수신 시 기본 2.4초 동안 3회 부드럽게 점멸한다. 테두리는 유지하며 각 점멸은 채우기가 나타났다가 사라지는 형태다. 기본 지도는 이 효과의 시작·종료에 따라 다시 그리지 않는다. `mapHighlight: {duration: 3, color: '#d6e2ec'}`로 바꾸거나 `mapHighlight: false`로 끈다. 빈 지역 목록은 강조하지 않는다. 이 효과는 짧은 수신 표시이며 지속적인 발송 이력 채우기·위기경보 경계는 별도 `region`으로 작성한다. 엔진이 기관명에서 발송 범위를 추측하지 않는다.
 
 기관명은 발송 대상과 다를 수 있다. 도청이 특정 시군만 대상으로 보내면 본문에 그 시군을 명시하고 그 코드만 지정한다. ‘도 전역’ 문자는 내장 목록에서 도 소속 시군 전체를 조회해 포함한다. 모든 문자에서 본문 대상·`regions`·지속 지도 표시를 대조한다. 의도적인 불일치는 작성 근거를 작품 기록에 남기며 `mapHighlight: false`와 별도 지도 이벤트로 표현할 수 있다. 지역 강조·지점·영역·선은 여러 개를 병렬로 사용할 수 있다.
+
+### 그리드 색면
+
+`grid`는 강수·온도·오염처럼 행정경계와 무관한 분포를 표현하는 범용 색상 격자다. 레이더 수집이나 물리 시뮬레이션을 수행하지 않는다. 작품의 민간 현황판이 받을 수 있는 공개 정보의 범위·갱신 주기에 맞춰 작성한다. 실제 자료와 기술 검증용 합성 자료의 출처를 구별한다.
+
+자산 JSON은 `{bounds, cells}`다. `bounds`는 WGS84 `[서쪽 경도, 남쪽 위도, 동쪽 경도, 북쪽 위도]`이며 서쪽 < 동쪽, 남쪽 < 북쪽이어야 한다. 위도 범위는 -85~85도이며 날짜변경선을 가로지르는 범위는 지원하지 않는다. `cells`는 같은 열 수를 가진 1~256행 × 1~256열 배열이다. 첫 행이 북쪽, 첫 열이 서쪽이며 지정 범위를 경위도상 균등하게 나눈다. 각 셀은 `#RRGGBB`, 알파를 포함한 `#RRGGBBAA`, 또는 투명한 `null`이다.
+
+```json
+{
+  "bounds": [126.5, 37.0, 127.5, 38.0],
+  "cells": [
+    [null, "#31a6cd", "#45b96e"],
+    ["#4564b980", "#45b96e", "#d5cb4d"]
+  ]
+}
+```
+
+이 파일을 작품 폴더의 `maps/early.json`에 두었다면 다음처럼 참조한다. 컷 `opening`은 20초 이상이어야 하며 두 번째 파일은 같은 범위의 다음 관측 화면으로 준비한다.
+
+```yaml
+assets:
+  field-early: {path: maps/early.json, source: "작품용 합성 분포", license: CC0}
+  field-later: {path: maps/later.json, source: "작품용 합성 분포", license: CC0}
+events:
+  - {id: field-early, type: grid, cut: opening, at: 5, duration: 10, asset: field-early}
+  - {id: field-later, type: grid, cut: opening, at: 15, duration: 5, asset: field-later}
+```
+
+표시 시점마다 별도 파일을 준비하고 이전 이벤트의 종료와 다음 이벤트의 시작을 맞춰 교체한다. 겹치는 구간에는 타임라인 순서대로 합성한다. 셀의 알파에 이벤트 `opacity`와 페이드가 곱해진다. 자동 보간이나 수치·지점명·격자선·범례는 생성하지 않는다. 필요한 범례는 기존 `legend`로 별도 작성한다. 색면은 지역 강조·선·마커 아래에 놓이며 메인·보조 지도에서 각각 같은 지리 좌표로 투영된다. 시간 도약 중에는 이전 색면을 유지하고 임의 탐색에서도 해당 시점의 파일을 복원한다.
+
+큰 배열은 직접 나열하기보다 코드로 생성한다. [실행 예제](../examples/grid.mjs)를 작품 폴더의 `grid.mjs`로 복사해 수정할 수 있다. 이 예제는 동일한 범위에서 시간에 따라 달라지는 합성 색면을 만들며 기존 파일을 덮어쓰지 않는다.
+
+```sh
+mkdir -p maps
+node grid.mjs maps/early.json 0
+node grid.mjs maps/later.json 1
+npx dbs validate scenario.yaml
+npx dbs frame scenario.yaml --frame 480 --out output/grid-check.png
+```
+
+작업 AI는 셀마다 지리 좌표를 추측할 필요 없이 검토한 지도 범위와 행·열 배열을 사용한다. 범위와 행 방향은 실제 프레임으로 확인하고, 합성 분포의 모양·색상은 생성 코드에서 수정한다. 그리드 JSON을 저장하면 미리보기에서 입력을 다시 검증하고 잘못된 파일은 마지막 정상 화면을 유지한다.
 
 음원 코드 실행과 WAV 제작은 [Tone.js 음원 제작](audio.md)을 따른다.
 

@@ -17,15 +17,17 @@ import { News, Status } from './Information.js';
 import { changeProgress, transitionAt } from './transitions.js';
 import { layout } from './layout.js';
 import { TimeJump, timeJumpStrength } from './TimeJump.js';
+import type { Grid } from '../grid.js';
 export type BroadcastProps = {
   timeline: Timeline;
   regions: Regions;
   countries: FeatureCollection;
   provinces: FeatureCollection;
   audio: Record<string, string>;
+  grids: Record<string, Grid>;
 };
 export function Broadcast(props: BroadcastProps) {
-  const { timeline, regions, countries, provinces, audio } = props;
+  const { timeline, regions, countries, provinces, audio, grids } = props;
   const openingFrames = 5 * FPS;
   const frame = useCurrentFrame(),
     state = stateAt(timeline, frame);
@@ -110,6 +112,7 @@ export function Broadcast(props: BroadcastProps) {
               countries={countries}
               regions={regions}
               provinces={provinces}
+              grids={grids}
               events={mapEvents}
               frame={state.contentFrame}
             />
@@ -163,6 +166,7 @@ export function Broadcast(props: BroadcastProps) {
                   countries={countries}
                   regions={regions}
                   provinces={provinces}
+                  grids={grids}
                   events={mapEvents}
                   frame={state.contentFrame}
                   inset

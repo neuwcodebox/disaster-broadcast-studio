@@ -5,12 +5,14 @@ import { readBundledJson, packageRoot } from './assets.js';
 import { parseDocument } from 'yaml';
 import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
 import { compile, scenarioSchema, alertText, FPS, type Timeline } from './scenario.js';
+import { gridSchema, type Grid } from './grid.js';
 export type Regions = FeatureCollection<Polygon | MultiPolygon>;
 export type Loaded = {
   timeline: Timeline;
   regions: Regions;
   root: string;
   assetPaths: Record<string, string>;
+  grids: Record<string, Grid>;
   warnings: string[];
 };
 export async function localFile(root: string, value: string, label: string) {
@@ -86,6 +88,18 @@ export async function loadScenario(file: string): Promise<Loaded> {
     const assetPaths: Record<string, string> = {};
     for (const [key, asset] of Object.entries(scenario.assets))
       assetPaths[key] = await localFile(root, asset.path, `assets.${key}.path`);
+    const grids: Record<string, Grid> = {};
+    for (const event of timeline.events) {
+      if (event.type !== 'grid' || Object.hasOwn(grids, event.asset)) continue;
+      try {
+        const result = gridSchema.safeParse(JSON.parse(await readFile(assetPaths[event.asset], 'utf8')));
+        if (!result.success)
+          throw Error(result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n'));
+        Object.defineProperty(grids, event.asset, { value: result.data, enumerable: true });
+      } catch (error) {
+        throw Error(`events[${event.order}] (${event.id}).asset / assets.${event.asset}.path: invalid grid: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
     const usedSounds = new Set(notificationSounds(timeline).map((sound) => sound.asset));
     for (const sound of Object.values(defaultSounds))
       if (usedSounds.has(sound.asset))
@@ -111,7 +125,7 @@ export async function loadScenario(file: string): Promise<Loaded> {
           `${a.id}: latest-message reading time is short; allow ${readingSeconds}s before the next alert/end`,
         );
     }
-    return { timeline, regions, root, assetPaths, warnings };
+    return { timeline, regions, root, assetPaths, grids, warnings };
   } catch (e) {
     throw new Error(`${absolute}\n${e instanceof Error ? e.message : String(e)}`);
   }
