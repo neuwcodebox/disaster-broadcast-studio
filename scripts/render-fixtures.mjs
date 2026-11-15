@@ -209,6 +209,11 @@ const chat = {
   cuts: [{ id: 'one', duration: 20, storyTime: '2026-01-01T18:00:00+09:00' }],
   events: [
     { ...base.events[0], at: 5, sound: false },
+    // Rapid arrivals exercise history density, rather than demonstrate reading-time pacing.
+    { ...base.events[0], id: 'follow-up', at: 7, sound: false, level: '안전안내',
+      text: '[시험시청] 앞선 안내의 대상 지역을 확인하고 후속 방송을 기다려 주시기 바랍니다. 문자 이력과 채팅을 함께 확인하는 시험 문안입니다.' },
+    { ...base.events[0], id: 'correction', at: 9, sound: false, corrects: 'alert',
+      text: '[시험시청] 앞선 안내를 정정합니다. 지역별 안내 내용은 최신 문자를 확인해 주시기 바랍니다. 실제 재난 안내가 아닙니다.' },
     { ...base.events[1], duration: 20 },
     { ...base.events.find((e) => e.type === 'news'), at: 5, duration: 15,
       headline: '현황판 시험 송출…시청자 반응과 안내 가독성 확인' },
