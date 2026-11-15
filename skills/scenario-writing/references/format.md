@@ -15,7 +15,7 @@ npx dbs render scenario.yaml --out film.mp4
 npx dbs credits scenario.yaml --out description-credits.txt
 ```
 
-프레임은 0부터, 구간 끝은 포함한다. 300~599는 60fps에서 5초다. `inspect`는 해당 프레임의 이야기 시각·카메라·활성 연출·문자 이력을 렌더 없이 반환한다. `regions`는 내장 시군구 ID와 이름을 검색한다. `schema`의 JSON Schema가 정확한 필드 계약이다.
+프레임은 0부터, 구간 끝은 포함한다. 300~599는 60fps에서 5초다. `inspect`는 해당 프레임의 이야기 시각·카메라·활성 연출·문자 이력을 렌더 없이 반환한다. `regions`는 내장 대한민국 시군구 ID와 이름을 검색한다. 코드를 추측하거나 옛 행정코드를 기억으로 넣지 않는다. 예를 들어 `dbs regions --search 철원`의 결과는 `51780 철원군`이다. `--json`으로 목록을 읽고 문자열 ID를 사용한 뒤 `dbs validate scenario.yaml`로 실제 경계와 대조한다. 내장 목록은 SGIS/admdongkor 2026-07-01 경계를 시군구로 병합한 것이다. 북한의 배경 육지는 시군구 선택 목록이 아니다. 사용자 GeoJSON을 쓰면 그 파일의 Feature ID를 읽어 사용한다. `schema`의 JSON Schema가 정확한 필드 계약이다.
 
 `--browser`로 Chromium 경로를 지정할 수 있다. 생략하면 Remotion이 Chrome Headless Shell을 관리하며 최초 설치에 인터넷이 필요하다. 이후 렌더는 로컬 자산만 사용한다. Linux 소프트웨어 렌더는 `--gl swangle`, GPU는 기본 `angle`이다. `--concurrency` 기본값은 2다. `--overwrite` 없이 기존 결과를 덮어쓰지 않는다. 실패 시 종료코드 1과 입력 위치를 반환한다.
 
@@ -73,7 +73,8 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 | `type` | 추가 필드 | 동작 |
 | --- | --- | --- |
-| `region` | `duration`, `regions`, `color?`, `label?`, `pulse?`, `carry?` | 실제 행정구역 강조. 색 기본 `#b9615b`, pulse 기본 false |
+| `region` | `duration`, `regions`, `color?`, `fillOpacity?`, `strokeColor?`, `strokeOpacity?`, `strokeWidth?`, `label?`, `pulse?`, `carry?` | 실제 행정구역 강조. 색 기본 `#b9615b`, pulse 기본 false |
+| `legend` | `duration`, `items: [{text, color, symbol?}]`, `carry?` | 지도 하단 범례. symbol은 fill(기본)/outline/line. 동시 1개 |
 | `marker` | `duration`, `position`, `color?`, `label?`, `effect?`, `carry?` | 지점 또는 확대 후 멈추는 링. effect는 point(기본)/ring |
 | `zone` | `duration`, `points`, `color?`, `opacity?`, `carry?` | 행정구역과 다른 작품상의 영역. 처음·끝 좌표가 같은 닫힌 링, 최소 4점. opacity 기본 0.18 |
 | `line` | `duration`, `points`, `color?`, `width?`, `drawSeconds?`, `dashed?`, `carry?` | 지도에 투영되는 연결·경로·경계선. 최소 2점. width 기본 2px, drawSeconds 기본 0, dashed 기본 false |
@@ -82,7 +83,11 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 `line.drawSeconds` 동안 선이 처음부터 끝까지 나타난 뒤 이벤트 종료까지 유지된다. drawSeconds보다 이벤트가 먼저 끝나면 그 길이까지 나타난 뒤 사라진다. 점선과 조합할 수 있다. 영역·선은 지도 카메라와 함께 이동한다. 실제 행정구역을 강조할 때 임의 다각형으로 흉내 내지 말고 `region`을 쓴다. `zone`은 해상 통제구역·관측 범위처럼 행정 경계와 다른 작중 영역에 사용한다. 라벨·선·지점은 사건의 의미가 있을 때만 쓰며 지도에 모든 문장을 옮기지 않는다.
 
+행정구역의 채우기 불투명도 `fillOpacity` 기본 0.36, 윤곽선 `strokeColor` 기본 color, `strokeOpacity` 기본 1, `strokeWidth` 기본 2px다. 채우기 없이 경계만 표시하려면 `fillOpacity: 0`, 채우기만 표시하려면 `strokeWidth: 0`을 준다. 같은 지역에 여러 이벤트를 겹칠 수 있으며 채우기 위에 윤곽선이 놓이고 같은 종류 안에서는 이벤트 순서대로 합성한다. `legend`는 작품이 지정한 의미만 설명한다. 범례가 없으면 엔진은 자동으로 의미를 붙이지 않는다. 서로 다른 사실을 나타내는 색·선은 문안·시점·범례와 함께 작성한다.
+
 문자 `regions`와 지도 연출은 독립적이다. 문자 도착만으로 임의의 영역을 자동 강조하지 않는다. 대상 범위·발신기관·행동 지시와 지도 강조를 함께 검토한다. 지역 강조·지점·영역·선은 여러 개를 병렬로 사용할 수 있다.
+
+음원 코드 실행과 WAV 제작은 [Tone.js 음원 제작](audio.md)을 따른다.
 
 ## 음향·화면 효과
 

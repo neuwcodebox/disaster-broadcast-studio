@@ -82,10 +82,22 @@ const highlight = z
     type: z.literal('region'),
     regions: z.array(z.string()).min(1),
     color: color.default('#b9615b'),
+    fillOpacity: z.number().min(0).max(1).default(0.36),
+    strokeColor: color.optional(),
+    strokeOpacity: z.number().min(0).max(1).default(1),
+    strokeWidth: z.number().nonnegative().default(2),
     label: z.string().max(80).optional(),
     pulse: z.boolean().default(false),
   })
   .strict();
+const legend = z.object({
+  ...span,
+  type: z.literal('legend'),
+  items: z.array(z.object({
+    text: z.string().min(1).max(80), color,
+    symbol: z.enum(['fill', 'outline', 'line']).default('fill'),
+  }).strict()),
+}).strict();
 const marker = z
   .object({
     ...span,
@@ -175,6 +187,7 @@ export const scenarioSchema = z
           zone,
           line,
           highlight,
+          legend,
           marker,
           cameraEvent,
           inset,
@@ -298,7 +311,7 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
     }
   }
   // Single-owner tracks cannot have ambiguous concurrent values. Independent layers can overlap.
-  for (const type of ['camera', 'inset', 'news', 'status', 'bulletin'] as const) {
+  for (const type of ['camera', 'inset', 'news', 'status', 'bulletin', 'legend'] as const) {
     const track = events.filter((e) => e.type === type).sort((a, b) => a.start - b.start);
     for (let i = 1; i < track.length; i++)
       if (track[i].start < track[i - 1].end)

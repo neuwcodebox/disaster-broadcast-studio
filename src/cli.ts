@@ -103,6 +103,23 @@ program
     });
     console.log(path.resolve(opts.out));
   });
+program.command('audio <program>')
+  .description('Run a local Tone.js module offline and write PCM16 WAV')
+  .option('--assets <directory>', 'Local samples available through asset(relativePath)')
+  .requiredOption('-o, --out <path>')
+  .requiredOption('--duration <seconds>', 'Output length, including effect tails')
+  .option('--sample-rate <hz>', 'PCM sample rate', '48000')
+  .option('--channels <count>', '1 or 2', '2')
+  .option('--seed <integer>', 'Seed for procedural sound', '1')
+  .option('--browser <path>', 'Chromium executable; otherwise Remotion manages Chrome')
+  .option('--overwrite', 'Replace existing output')
+  .action(async (file, opts) => {
+    const { synthesize } = await import('./audio/render.js');
+    console.log(JSON.stringify({ ok: true, ...await synthesize(file, {
+      ...opts, duration: Number(opts.duration), sampleRate: Number(opts.sampleRate),
+      channels: Number(opts.channels), seed: Number(opts.seed),
+    }) }));
+  });
 for (const mode of ['frame', 'render'] as const) {
   const cmd = program
     .command(`${mode} <scenario>`)

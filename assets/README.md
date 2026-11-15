@@ -21,3 +21,5 @@ node scripts/build-map-assets.mjs /path/HangJeongDong_ver20260701.geojson /path/
 음원은 기본 제공하지 않는다. 작품의 로컬 음원마다 `source`, `license`를 기록한다. 기술 검증 스크립트의 사인파는 직접 생성한 CC0 음원이다. 실제 기관의 경보음을 자동 삽입하지 않는다.
 
 Remotion은 [사용 주체별 라이선스 조건](https://www.remotion.dev/pricing)이 적용된다. MapLibre GL JS는 BSD-3-Clause, React는 MIT다.
+
+Tone.js 15.1.22는 MIT 라이선스이며 의존성에 해당 라이선스가 포함된다. 창작 스킬의 `examples/receipt.mjs`, `examples/texture.mjs`는 직접 작성한 CC0-1.0 음향 코드다. `dbs audio`는 코드로 만든 소리와 사용자가 제공한 로컬 샘플을 WAV로 출력한다. 샘플 사용권은 작품별 출처에 보존한다.

@@ -72,6 +72,7 @@ export function Broadcast(props: BroadcastProps) {
   const status = state.visible.find((e) => e.type === 'status');
   const bulletin = state.visible.find((e) => e.type === 'bulletin');
   const inset = state.visible.find((e) => e.type === 'inset');
+  const legend = state.visible.find((e) => e.type === 'legend');
   return (
     <AbsoluteFill style={{ background: '#080b0d', fontFamily: bodyFont, color: '#dce1e5' }}>
       <AbsoluteFill style={{ opacity: state.opacity }}>
@@ -128,6 +129,16 @@ export function Broadcast(props: BroadcastProps) {
             events={state.visible}
             frame={frame}
           />
+          {legend?.type === 'legend' && <div style={{ position: 'absolute', left: 24, bottom: 24,
+            display: 'flex', flexDirection: 'column', gap: 10, background: '#0b0e10ed',
+            padding: '14px 18px', fontSize: 21, color: '#d0d5da' }}>
+            {legend.items.map((item, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ width: 23, height: item.symbol === 'line' ? 0 : 16,
+                background: item.symbol === 'fill' ? item.color : 'transparent',
+                border: item.symbol === 'fill' ? 'none' : `2px solid ${item.color}` }} />
+              <span>{item.text}</span>
+            </div>)}
+          </div>}
           {inset?.type === 'inset' && (
             <div
               style={{

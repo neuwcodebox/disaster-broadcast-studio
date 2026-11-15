@@ -241,3 +241,19 @@ test('publication credits retain creator, source, license and custom asset credi
   assert.ok(custom.text.includes('직접 제작'));
   assert.equal(custom.text.includes('private/path.wav'), false);
 });
+
+test('overlapping map categories keep independent fill, outline and timed legend',()=>{
+ const raw=input();
+ raw.events=[];
+ const scenario=scenarioSchema.parse({...raw,events:[
+  {id:'fill',type:'region',cut:'first',at:0,duration:10,regions:['47190'],color:'#8ba7bb',fillOpacity:.28,strokeWidth:0},
+  {id:'outline',type:'region',cut:'first',at:2,duration:4,regions:['47190'],color:'#cb9266',fillOpacity:0,strokeWidth:3},
+  {id:'key',type:'legend',cut:'first',at:2,duration:4,items:[{text:'작품에서 정한 범위',color:'#cb9266',symbol:'outline'}]},
+ ]});
+ const timeline=compile(scenario,new Set(['47190']));
+ assert.deepEqual(stateAt(timeline,120).visible.map(e=>e.id),['fill','outline','key']);
+ assert.deepEqual(stateAt(timeline,360).visible.map(e=>e.id),['fill']);
+ assert.equal(scenario.events[0].type==='region'&&scenario.events[0].strokeWidth,0);
+ assert.equal(scenario.events[1].type==='region'&&scenario.events[1].fillOpacity,0);
+ assert.throws(()=>scenarioSchema.parse({...raw,events:[{...scenario.events[0],fillOpacity:1.1}]}));
+});

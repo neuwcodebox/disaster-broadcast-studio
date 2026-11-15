@@ -2,11 +2,11 @@
 
 텍스트 시나리오를 한국형 재난방송 호러 영상으로 만드는 CLI. 지도·재난문자 이력·뉴스·시간·음향을 하나의 작품 파일로 지정하고 1080p 60fps MP4로 출력한다.
 
-- 실제 시도·시군구 경계와 한반도 지도, 지역 강조·지점·보조 지도
+- 실제 시도·시군구 경계와 한반도 지도, 겹치는 채우기·윤곽선·범례·지점·보조 지도
 - 문자 전문·정정 이력·독립 뉴스 헤드라인·방송 안내 화면
 - 문구·색상 기반 상태 박스, 사용자 지정 영역·진행선
 - 컷 내부 실시간, 컷 사이 시간 도약, 프레임 지정 탐색
-- 로컬 지도·한글 글꼴·음원, 페이드·침묵·화면 간섭
+- Tone.js 코드의 오프라인 WAV 생성, 로컬 음원·페이드·침묵·화면 간섭
 - 엔진과 분리해서 배포할 창작 AI용 스킬·공식 문안 참고자료
 
 ## 설치
@@ -29,6 +29,7 @@ npx dbs skill --out .agents/skills/scenario-writing
 ```sh
 npx dbs schema --out scenario.schema.json
 npx dbs regions --search 철원
+npx dbs audio sound.mjs --duration 3 --seed 731 --out audio/sound.wav
 npx dbs validate scenario.yaml
 npx dbs inspect scenario.yaml --frame 360
 npx dbs frame scenario.yaml --frame 360 --out preview.png
@@ -38,6 +39,8 @@ npx dbs credits scenario.yaml --out description-credits.txt
 ```
 
 YAML/JSON의 `cuts`에 이야기 시작 시각과 길이, `events`에 문자·뉴스·지도·음향을 지정한다. 컷 안은 실시간으로 흐르고 컷 경계에서만 시간을 생략한다. 프레임은 0부터 시작하며 구간의 끝 프레임도 포함한다. 300~599는 5초다.
+
+음향은 [Tone.js 가이드](skills/scenario-writing/references/audio.md)의 모듈을 작성해 `dbs audio`로 WAV를 만들거나, 사용권이 있는 기존 파일을 연결한다. 합성은 브라우저의 오프라인 Web Audio에서 수행하며 결과 옆에 Tone·Chromium 버전과 시드·음량 기록을 남긴다.
 
 기본 출력은 H.264/AAC MP4, 1920×1080, 60fps다. 음원이 없는 작품도 무음 오디오 트랙을 포함한다. 처음 3초에는 작품 제목과 필수 허구 고지를 표시한다. 긴 문자는 전문을 페이지로 나누고, 최신 문자와 이전 이력을 함께 표시한다. 읽기 시간 경고가 나오면 다음 문자까지 간격을 늘린다.
 

@@ -1,0 +1,84 @@
+# Tone.js 음원 제작
+
+`dbs audio`는 창작자가 작성한 JavaScript 모듈을 Chromium의 Web Audio `Tone.Offline` 안에서 실행해 **PCM16 WAV**로 저장한다. Python이나 별도 Tone.js 설치는 필요 없다. Tone.js는 도구 의존성에 고정되어 있다. 완성 WAV를 일반 `assets`와 `audio` 이벤트에 연결하므로 영상 출력 때 합성 코드를 다시 실행하지 않는다.
+
+## 실행 가능한 시작점
+
+스킬의 `examples/receipt.mjs`는 직접 합성한 짧은 수신음 예제이며 CC0-1.0이다. 실제 정부 경보음을 재현한 것이 아니다.
+
+```sh
+npx dbs audio .agents/skills/scenario-writing/examples/receipt.mjs \
+  --duration 0.55 --channels 1 --seed 731 --out audio/receipt.wav
+```
+
+스킬을 다른 위치에 받았다면 모듈 경로를 맞춘다. 명령의 입력·출력·`--assets` 경로는 **현재 작업 폴더 기준**이다. 모듈 내부의 상대 `import`는 **그 모듈 기준**으로 번들된다. `.mjs`를 권장하며 `.js`도 지원한다. 음향 코드 역시 실행 코드이므로 작성·확인한 로컬 모듈을 실행한다.
+
+## 모듈 계약
+
+기본 내보내기는 다음 함수를 사용한다. 이 함수가 만드는 노드와 예약한 소리가 출력에 포함된다.
+
+```js
+export default async function ({ Tone, context, duration, sampleRate, channels, seed, random, asset }) {
+  const synth = new Tone.Synth({
+    oscillator: { type: 'sine' },
+    envelope: { attack: 0.02, decay: 0.08, sustain: 0, release: 0.1 },
+  }).toDestination();
+  synth.volume.value = -18;
+  synth.triggerAttackRelease(440, 0.15, 0);
+  synth.triggerAttackRelease(330, 0.15, 0.35);
+}
+```
+
+- `Tone`은 설치된 Tone.js 모듈이고 `context`는 현재 OfflineContext다. 별도로 `Tone.Offline`을 중첩 호출하거나 `Tone.start()`·마이크·스피커·GUI를 사용하지 않는다.
+- 시간은 음원 시작 기준 **초**다. `start(0)`처럼 예약한다. Transport를 쓰면 `context.transport.start(0)`도 지정한다. `setTimeout`·벽시계로 재생을 기다리지 않는다.
+- `duration`에는 잔향·릴리즈까지 포함한다. 종료 이후의 소리는 잘린다. 예약한 노드를 렌더 완료 전에 `dispose()`하면 소리가 사라질 수 있다.
+- `random()`은 시드 기반 난수다. Tone를 불러오기 전 `Math.random`도 시드로 초기화한다. 모듈 최상위에서 난수를 뽑지 말고 함수 안에서 생성한다. `Date.now()`·네트워크 응답을 제작 변수로 쓰지 않는다.
+- `channels`는 1 또는 2, 기본 2다. `sampleRate` 기본 48000Hz, `seed` 기본 1이다. 사용자 지정 샘플레이트의 지원 여부는 Chromium Web Audio에 따른다.
+
+## 로컬 샘플
+
+직접 합성 이외에 사용 허가를 확보한 로컬 샘플도 읽을 수 있다.
+
+```sh
+npx dbs audio sound.mjs --assets ./samples --duration 3 --out audio/result.wav
+```
+
+```js
+export default async function ({ Tone, asset }) {
+  const player = new Tone.Player(asset('licensed-sample.wav')).toDestination();
+  await Tone.loaded();
+  player.start(0);
+}
+```
+
+`asset()`에는 `--assets` 폴더 안의 상대 경로를 준다. 샘플의 라이선스·출처는 작품 `assets`에 기록한다. URL 샘플에 의존하지 않는다. 추가 JavaScript 라이브러리는 작품 워크스페이스에 설치하고 해당 모듈에서 가져올 수 있으나, Node 전용 기능은 브라우저에서 실행되지 않는다.
+
+## 결과 확인과 영상 연결
+
+성공하면 WAV와 옆의 `.wav.json`이 생성된다. 기록에는 길이·샘플레이트·채널·시드·Tone 버전·실제 Chromium 버전·피크·RMS·클리핑 샘플 수가 들어간다. 모듈과 생성 명령, 원본 샘플, 사용한 도구 패키지를 작품과 함께 보관한다. 같은 버전·환경·시드는 재현 기준이며 다른 브라우저·하드웨어 사이의 비트 단위 일치를 약속하지 않는다.
+
+`--overwrite` 없이 기존 WAV를 덮어쓰지 않는다. 문법·모듈·샘플 로딩·합성 오류는 실패로 반환하고 미완성 WAV를 결과로 남기지 않는다. 피크 초과는 PCM 범위로 자르고 경고한다. 소리가 0이면 경고한다. 음원을 들어 보고 게인을 조정하며, 클리핑·무음 경고를 성공적인 연출로 착각하지 않는다.
+
+```yaml
+assets:
+  receipt:
+    path: audio/receipt.wav
+    source: 직접 합성한 수신음. audio-code/receipt.mjs 참조.
+    license: CC0-1.0
+events:
+  - id: receipt-1
+    type: audio
+    cut: first
+    at: 7
+    duration: 0.55
+    asset: receipt
+    volume: 0.8
+```
+
+WAV 생성과 영상 타임라인은 별개다. 음원 길이·이벤트 길이·offset·페이드·침묵 구간을 실제 구간 영상에서 함께 확인한다. 기존 WAV/FLAC 등 파일도 그대로 사용할 수 있다.
+
+## 원천 자료
+
+- [Tone.js Offline API](https://tonejs.github.io/docs/15.0.4/functions/Offline.html): Offline callback과 예약 시간, 채널·샘플레이트.
+- [Tone.js 소스·MIT 라이선스](https://github.com/Tonejs/Tone.js): 실제 설치 버전은 출력 기록에 보존.
+- [Remotion Artifact](https://www.remotion.dev/docs/artifact): 브라우저에서 만든 바이트를 로컬 파일로 반환하는 경로.

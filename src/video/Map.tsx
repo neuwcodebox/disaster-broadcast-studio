@@ -67,7 +67,7 @@ const style = (
       id: 'highlight-line',
       type: 'line',
       source: 'highlights',
-      paint: { 'line-color': ['get', 'color'], 'line-width': 2 },
+      paint: { 'line-color': ['get', 'strokeColor'], 'line-width': ['get', 'strokeWidth'], 'line-opacity': ['get', 'strokeOpacity'] },
     },
   ],
 });
@@ -137,6 +137,7 @@ export function BroadcastMap({
   const { delayRender, continueRender } = useDelayRender();
   const markers = useRef<HTMLDivElement>(null);
   const snapshot = useRef<HTMLCanvasElement>(null);
+  const outlineSnapshot = useRef<HTMLCanvasElement>(null);
   const pulseLayers = useRef<HTMLDivElement>(null);
   const geometrySignature = useRef('');
   const completedSignature = useRef('');
@@ -191,6 +192,7 @@ export function BroadcastMap({
       try {
         m.getCanvas().style.visibility = 'visible';
         if (snapshot.current) snapshot.current.style.display = 'none';
+        if (outlineSnapshot.current) outlineSnapshot.current.style.display = 'none';
         if (pulseLayers.current) pulseLayers.current.replaceChildren();
         for (const layer of m.getStyle().layers)
           m.setLayoutProperty(layer.id, 'visibility', 'visible');
@@ -202,7 +204,7 @@ export function BroadcastMap({
           pitch: camera.pitch,
         });
 
-        const regionSignature = JSON.stringify(regionsNow.map((e) => [e.id, e.regions, e.color]));
+        const regionSignature = JSON.stringify(regionsNow);
         if (regionSignature !== geometrySignature.current) {
           const features = regionsNow.flatMap((e) =>
             regions.features
@@ -210,7 +212,9 @@ export function BroadcastMap({
               .map((f) => ({
                 ...f,
                 id: `${e.id}:${f.id}`,
-                properties: { ...f.properties, color: e.color, eventId: e.id },
+                properties: { ...f.properties, color: e.color, eventId: e.id,
+                  strokeColor: e.strokeColor ?? e.color, strokeWidth: e.strokeWidth,
+                  strokeOpacity: e.strokeOpacity },
               })),
           );
           (m.getSource('highlights') as GeoJSONSource).setData({
@@ -226,9 +230,9 @@ export function BroadcastMap({
             event.id,
             event.pulse
               ? moving
-                ? 0.23 + 0.12 * (1 + Math.sin(((frame - event.start) / 60) * Math.PI))
+                ? event.fillOpacity * (0.65 + 0.175 * (1 + Math.sin(((frame - event.start) / 60) * Math.PI)))
                 : 0
-              : 0.36,
+              : event.fillOpacity,
           );
         opacity.push(0.36);
         m.setPaintProperty(
@@ -236,6 +240,8 @@ export function BroadcastMap({
           'fill-opacity',
           regionsNow.length ? (opacity as maplibregl.ExpressionSpecification) : 0.36,
         );
+        // Static pulse fills are composited below a separate outline snapshot.
+        m.setLayoutProperty('highlight-line', 'visibility', moving ? 'visible' : 'none');
         m.once('idle', () => {
           document.fonts.ready
             .then(async () => {
@@ -266,7 +272,7 @@ export function BroadcastMap({
                 image.width = m.getCanvas().width;
                 image.height = m.getCanvas().height;
                 image.getContext('2d')!.drawImage(m.getCanvas(), 0, 0);
-                for (const event of regionsNow.filter((e) => e.pulse)) {
+                for (const event of regionsNow.filter((e) => e.pulse && e.fillOpacity > 0)) {
                   for (const layer of m.getStyle().layers)
                     m.setLayoutProperty(
                       layer.id,
@@ -284,17 +290,29 @@ export function BroadcastMap({
                   layer.height = m.getCanvas().height;
                   layer.getContext('2d')!.drawImage(m.getCanvas(), 0, 0);
                   layer.dataset.start = String(event.start);
+                  layer.dataset.opacity = String(event.fillOpacity);
                   Object.assign(layer.style, {
                     position: 'absolute',
                     inset: '0',
                     width: '100%',
                     height: '100%',
                     opacity: String(
-                      0.23 + 0.12 * (1 + Math.sin(((frame - event.start) / 60) * Math.PI)),
+                      event.fillOpacity * (0.65 + 0.175 * (1 + Math.sin(((frame - event.start) / 60) * Math.PI))),
                     ),
                   });
                   pulseLayers.current!.append(layer);
                 }
+                for (const layer of m.getStyle().layers)
+                  m.setLayoutProperty(layer.id, 'visibility', layer.id === 'highlight-line' ? 'visible' : 'none');
+                await new Promise<void>((resolve) => {
+                  m.once('idle', () => resolve());
+                  m.triggerRepaint();
+                });
+                const outlines = outlineSnapshot.current!;
+                outlines.width = m.getCanvas().width;
+                outlines.height = m.getCanvas().height;
+                outlines.getContext('2d')!.drawImage(m.getCanvas(), 0, 0);
+                outlines.style.display = 'block';
                 image.style.display = 'block';
                 m.getCanvas().style.visibility = 'hidden';
               }
@@ -326,7 +344,7 @@ export function BroadcastMap({
   useEffect(() => {
     for (const image of pulseLayers.current?.querySelectorAll<HTMLCanvasElement>('canvas') ?? [])
       image.style.opacity = String(
-        0.23 + 0.12 * (1 + Math.sin(((frame - Number(image.dataset.start)) / 60) * Math.PI)),
+        Number(image.dataset.opacity) * (0.65 + 0.175 * (1 + Math.sin(((frame - Number(image.dataset.start)) / 60) * Math.PI))),
       );
   }, [frame]);
   return (
@@ -339,6 +357,8 @@ export function BroadcastMap({
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'none' }}
       />
       <div ref={pulseLayers} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+      <canvas ref={outlineSnapshot} aria-hidden="true"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'none' }} />
       <div ref={markers} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
           {events.map((e) => {
