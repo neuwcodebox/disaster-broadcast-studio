@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {scenarioSchema,compile} from '../src/scenario.js';
 import {stateAt,receiptHighlights,shutdownAt,regionOpacity} from '../src/timeline.js';
-import {notificationSounds,notificationAsset} from '../src/notifications.js';
+import {notificationSounds,defaultSounds} from '../src/notifications.js';
 const make=(extra:any={})=>compile(scenarioSchema.parse({version:1,title:'전환',fictionNotice:'허구',agencies:{a:'가상 기관'},assets:{own:{path:'own.wav',source:'test',license:'CC0'}},map:{camera:{center:[127,37],zoom:6}},cuts:[{id:'a',duration:10,storyTime:'2031-01-01T00:00:00+09:00'},{id:'b',duration:10,storyTime:'2031-01-01T02:00:00+09:00',clockTransition:1}],events:[{id:'one',type:'alert',cut:'a',at:2,sender:'a',text:'지역 안내',regions:['51']},{id:'two',type:'alert',cut:'b',at:1.2,sender:'a',text:'후속 안내',regions:['51'],mapHighlight:false,sound:false},{id:'s',type:'screen',cut:'b',at:6,duration:4,effect:'shutdown'}],...extra}),new Set(['51']));
 test('receipt targets authored geometry once, supports opt-out and deterministic seeking',()=>{
  const t=make();assert.deepEqual(receiptHighlights(t,119),[]);
@@ -48,7 +48,7 @@ test('clock traverses skipped time while old content holds, then real-time flow 
  assert.deepEqual(stateAt(t,630),mid);
 });
 test('common sound plays once and supports disabled or custom audio',()=>{
- const t=make();assert.equal(notificationSounds(t).length,1);assert.equal(notificationSounds(t)[0].asset,notificationAsset);
+ const t=make();assert.equal(notificationSounds(t).length,1);assert.equal(notificationSounds(t)[0].asset,defaultSounds['안전안내'].asset);
  const raw=structuredClone(t.scenario);const e=raw.events[0];if(e.type!=='alert')throw Error();e.sound={asset:'own',duration:1.4,volume:.4};
  assert.equal(notificationSounds(compile(scenarioSchema.parse(raw),new Set(['51'])))[0].frames,84);
  e.sound={asset:'missing',duration:1,volume:1};assert.throws(()=>compile(scenarioSchema.parse(raw),new Set(['51'])),/sound.asset/);

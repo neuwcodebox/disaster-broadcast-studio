@@ -1,8 +1,7 @@
 import { FPS, type Timeline } from './scenario.js';
 
-export const notificationAsset = '__dbs_notification';
 export const defaultSounds = {
-  '안전안내': { asset: notificationAsset, file: 'notification.wav', duration: 0.55, volume: 0.65 },
+  '안전안내': { asset: '__dbs_notification', file: 'notification.wav', duration: 0.55, volume: 0.65 },
   '긴급재난': { asset: '__dbs_alert_urgent', file: 'alert-urgent.wav', duration: 2.4, volume: 0.85 },
   '위급재난': { asset: '__dbs_alert_critical', file: 'alert-critical.wav', duration: 4.2, volume: 0.95 },
   status: { asset: '__dbs_status', file: 'status.wav', duration: 0.3, volume: 0.75 },
