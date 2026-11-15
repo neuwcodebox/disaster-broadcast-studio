@@ -6,9 +6,7 @@ type Jump = ReturnType<typeof stateAt>['timeJump'];
 
 export function timeJumpStrength(jump: Jump) {
   if (!jump) return 0;
-  const lead = jump.style === 'blink' ? 0.08 : 0.15;
-  const tail = jump.style === 'blink' ? 0.12 : 0.25;
-  const ramp = Math.max(0, Math.min(1, jump.progress / lead, (1 - jump.progress) / tail));
+  const ramp = Math.max(0, Math.min(1, jump.progress / 0.15, (1 - jump.progress) / 0.25));
   return ramp * ramp * (3 - 2 * ramp);
 }
 
@@ -16,20 +14,6 @@ export function timeJumpStrength(jump: Jump) {
 export function TimeJump({ jump }: { jump: Jump }) {
   if (!jump) return null;
   const strength = timeJumpStrength(jump);
-  if (jump.style === 'blink') {
-    return (
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: '#000',
-          pointerEvents: 'none',
-          opacity: strength,
-        }}
-      />
-    );
-  }
   return (
     <>
       <svg width={0} height={0} aria-hidden="true" style={{ position: 'absolute' }}>

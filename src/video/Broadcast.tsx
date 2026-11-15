@@ -36,7 +36,7 @@ export function Broadcast(props: BroadcastProps) {
   const signal = signalLevels(state.visible, frame);
   const mapEvents = [...state.visible, ...receiptHighlights(timeline, state.contentFrame)];
   const shutdown = shutdownAt(state.visible, frame);
-  const jumpStrength = state.timeJump?.style === 'fast-forward' ? timeJumpStrength(state.timeJump) : 0;
+  const jumpStrength = timeJumpStrength(state.timeJump);
   return (
     <AbsoluteFill
       style={{
@@ -51,7 +51,6 @@ export function Broadcast(props: BroadcastProps) {
           opacity: shutdown?.black ? 0 : state.opacity,
           transform: shutdown ? `scale(${shutdown.x},${shutdown.y})` : undefined,
           transformOrigin: '50% 50%',
-          isolation: 'isolate',
         }}
       >
         <header
@@ -70,8 +69,6 @@ export function Broadcast(props: BroadcastProps) {
           <Status timeline={timeline} frame={state.contentFrame} />
           <time
             style={{
-              position: 'relative',
-              zIndex: 1,
               marginLeft: 'auto',
               flexShrink: 0,
               fontSize: 32,

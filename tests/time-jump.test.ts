@@ -6,13 +6,13 @@ import { compile, scenarioSchema } from '../src/scenario.js';
 import { stateAt } from '../src/timeline.js';
 import { TimeJump, timeJumpStrength } from '../src/video/TimeJump.js';
 
-function make(storyTime = '2031-01-02T02:00:00+09:00', clockTransition = 2, clockTransitionStyle = 'fast-forward') {
+function make(storyTime = '2031-01-02T02:00:00+09:00', clockTransition = 2) {
   return compile(scenarioSchema.parse({
     version: 1, title: '시간 전환', fictionNotice: '허구', agencies: {},
     map: { camera: { center: [127, 37], zoom: 6 } },
     cuts: [
       { id: 'before', duration: 10, storyTime: '2031-01-01T23:59:50+09:00' },
-      { id: 'after', duration: 10, storyTime, clockTransition, clockTransitionStyle },
+      { id: 'after', duration: 10, storyTime, clockTransition },
     ],
     events: [],
   }), new Set());
@@ -29,21 +29,6 @@ test('fast-forward effect is limited to an authored transition across skipped st
   // Adjacent cuts with continuous story time do not signal a time skip.
   assert.equal(markup(make('2031-01-02T00:00:00+09:00'), 630), '');
   assert.equal(markup(make(undefined, 0), 600), '');
-});
-
-test('blink style closes quickly, holds black while the clock runs, and opens on arrival', () => {
-  const timeline = make(undefined, 2.5, 'blink');
-  assert.equal(stateAt(timeline, 600).timeJump?.style, 'blink');
-  assert.equal(timeJumpStrength(stateAt(timeline, 600).timeJump), 0);
-  for (const frame of [612, 660, 720]) {
-    assert.equal(timeJumpStrength(stateAt(timeline, frame).timeJump), 1);
-    assert.match(markup(timeline, frame), /background:#000/);
-    assert.doesNotMatch(markup(timeline, frame), /<svg|<path/);
-  }
-  assert.equal(timeJumpStrength(stateAt(timeline, 749).timeJump), 0);
-  assert.equal(markup(timeline, 750), '');
-  assert.equal(stateAt(timeline, 660).contentFrame, 599);
-  assert.throws(() => make(undefined, 2.5, 'unknown'));
 });
 
 test('effect fades in, stays visible while the clock rolls, and fades away on arrival', () => {

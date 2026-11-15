@@ -121,7 +121,6 @@ export function stateAt(t: Timeline, frame: number) {
       ? {
           progress: (frame - cut.start) / Math.max(1, transition - 1),
           elapsedFrames: frame - cut.start,
-          style: cut.clockTransitionStyle,
         }
       : null,
     contentFrame,
