@@ -9,7 +9,7 @@ YAML/JSON 시나리오를 한국형 재난방송 호러 영상으로 만드는 C
 - **방송 화면:** 최신순 재난문자·정정 이력, 독립 뉴스, 상태 박스, 장문 방송 안내. 뉴스·문자·상태 변경을 알리는 기본 전환 효과.
 - **지도 연출:** 실제 시도·시군구 경계, 채우기·윤곽선 중첩, 범례·지점·영역·진행선, 카메라 이동·보조 지도.
 - **시간 연출:** 컷 안에서는 실시간으로, 컷 사이에서는 지정한 이야기 시각으로 전환. 임의 프레임에서도 같은 상태를 복원.
-- **음향·효과:** 공통 수신음, 로컬 음원, Tone.js 코드의 WAV 합성, 페이드·침묵·신호 간섭·송출 종료.
+- **음향·효과:** 상태·뉴스·방송 안내·등급별 문자 기본음, 로컬 음원, Tone.js 코드의 WAV 합성, 페이드·침묵·신호 간섭·송출 종료.
 - **텍스트 제작 흐름:** 검증, 렌더 없는 상태 조회, PNG 미리보기, 구간·전체 영상 출력, 게시용 출처 생성.
 
 실제 긴급 서비스에 연결하거나 문자를 발송하지 않습니다. 작품 제목과 필수 허구 고지는 영상 첫 5초에 표시합니다.
@@ -76,7 +76,7 @@ npx dbs regions --search 철원 --json
 npx dbs credits scenario.yaml --out description-credits.txt
 ```
 
-문자 수신음은 기본 제공하며 문자별로 끄거나 교체할 수 있습니다. 작품 고유 음향은 사용권이 있는 로컬 파일을 연결하거나, [Tone.js 음향 가이드](skills/scenario-writing/references/audio.md)에 따라 ES 모듈을 작성해 WAV로 합성합니다.
+상태 변경·뉴스·방송 안내·등급별 재난문자 효과음을 기본 제공합니다. 안전안내는 짧은 수신음, 긴급·위급재난은 더 크고 긴 경보음으로 구분하며 이벤트별로 끄거나 교체할 수 있습니다. 작품 고유 음향은 사용권이 있는 로컬 파일을 연결하거나, [Tone.js 음향 가이드](skills/scenario-writing/references/audio.md)에 따라 ES 모듈을 작성해 WAV로 합성합니다.
 
 ```sh
 npx dbs audio audio-code/sound.mjs --duration 3 --seed 731 --out audio/sound.wav
@@ -107,4 +107,4 @@ npm pack
 
 ## 이용조건
 
-코드는 [MIT](LICENSE)입니다. 지도·글꼴·공통 수신음은 [자산 출처와 이용조건](assets/README.md)을 확인하세요. Remotion에는 [별도 라이선스 조건](https://www.remotion.dev/pricing)이 적용됩니다.
+코드는 [MIT](LICENSE)입니다. 지도·글꼴·기본 효과음은 [자산 출처와 이용조건](assets/README.md)을 확인하세요. Remotion에는 [별도 라이선스 조건](https://www.remotion.dev/pricing)이 적용됩니다.

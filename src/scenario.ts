@@ -19,6 +19,19 @@ const span = {
   duration: z.number().positive(),
   carry: z.boolean().default(false),
 };
+const notificationSound = z
+  .union([
+    z.literal(false),
+    z.literal('default'),
+    z
+      .object({
+        asset: id,
+        duration: z.number().positive(),
+        volume: z.number().min(0).max(2).default(0.8),
+      })
+      .strict(),
+  ])
+  .default('default');
 const alert = z
   .object({
     ...timed,
@@ -38,19 +51,7 @@ const alert = z
           .strict(),
       ])
       .default({ duration: 2.4, color: '#d6e2ec' }),
-    sound: z
-      .union([
-        z.literal(false),
-        z.literal('default'),
-        z
-          .object({
-            asset: id,
-            duration: z.number().positive(),
-            volume: z.number().min(0).max(2).default(0.8),
-          })
-          .strict(),
-      ])
-      .default('default'),
+    sound: notificationSound,
     corrects: id.optional(),
     occurredAt: timestamp.optional(),
     publishedAt: timestamp.optional(),
@@ -61,6 +62,7 @@ const news = z
   .object({
     ...span,
     type: z.literal('news'),
+    sound: notificationSound,
     source: id,
     headline: z.string().min(1).max(160),
     publishedAt: timestamp.optional(),
@@ -70,6 +72,7 @@ const status = z
   .object({
     ...span,
     type: z.literal('status'),
+    sound: notificationSound,
     items: z.array(z.object({ text: z.string().min(1).max(80), color }).strict()),
   })
   .strict();
@@ -77,6 +80,7 @@ const bulletin = z
   .object({
     ...span,
     type: z.literal('bulletin'),
+    sound: notificationSound,
     source: id,
     heading: z.string().min(1).max(80),
     text: z.string().min(1).max(4000),
@@ -348,9 +352,9 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
     if ('regions' in e)
       for (const r of e.regions)
         if (!regionIds.has(r)) errors.push(`${path}.regions: unknown region ${r}`);
+    if ('sound' in e && typeof e.sound === 'object' && !Object.hasOwn(scenario.assets, e.sound.asset))
+      errors.push(`${path}.sound.asset: unknown asset ${e.sound.asset}`);
     if (e.type === 'alert') {
-      if (typeof e.sound === 'object' && !Object.hasOwn(scenario.assets, e.sound.asset))
-        errors.push(`${path}.sound.asset: unknown asset ${e.sound.asset}`);
       if (!Object.hasOwn(scenario.agencies, e.sender))
         errors.push(`${path}.sender: unknown agency ${e.sender}`);
       if (e.corrects) {

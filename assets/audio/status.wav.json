@@ -1,0 +1,15 @@
+{
+  "duration": 0.38,
+  "sampleRate": 48000,
+  "channels": 1,
+  "seed": 731,
+  "peak": 0.23999999463558197,
+  "clippedSamples": 0,
+  "rms": 0.12352397208407463,
+  "frames": 18240,
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.8127.2 Safari/537.36",
+  "program": "status.mjs",
+  "tone": "15.1.22",
+  "format": "PCM16LE",
+  "output": "status.wav"
+}

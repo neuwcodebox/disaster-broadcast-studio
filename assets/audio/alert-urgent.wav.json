@@ -1,0 +1,15 @@
+{
+  "duration": 2.4,
+  "sampleRate": 48000,
+  "channels": 1,
+  "seed": 731,
+  "peak": 0.6074642539024353,
+  "clippedSamples": 0,
+  "rms": 0.2632769684819564,
+  "frames": 115200,
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.8127.2 Safari/537.36",
+  "program": "alert-urgent.mjs",
+  "tone": "15.1.22",
+  "format": "PCM16LE",
+  "output": "alert-urgent.wav"
+}

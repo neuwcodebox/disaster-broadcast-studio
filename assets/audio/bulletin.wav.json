@@ -1,0 +1,15 @@
+{
+  "duration": 1,
+  "sampleRate": 48000,
+  "channels": 1,
+  "seed": 731,
+  "peak": 0.3235248625278473,
+  "clippedSamples": 0,
+  "rms": 0.1558932138987553,
+  "frames": 48000,
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.8127.2 Safari/537.36",
+  "program": "bulletin.mjs",
+  "tone": "15.1.22",
+  "format": "PCM16LE",
+  "output": "bulletin.wav"
+}

@@ -55,9 +55,9 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | `type` | 추가 필드 | 동작 |
 | --- | --- | --- |
 | `alert` | `sender`, `text`, `level?`, `regions?`, `corrects?`, `occurredAt?`, `publishedAt?`, `pageSeconds?`, `mapHighlight?`, `sound?` | 수신 이후 최신순 이력에 남는다. duration/carry 없음 |
-| `news` | `duration`, `source`, `headline`, `publishedAt?`, `carry?` | 하단 뉴스. 동시 1개. 최대 160자 |
-| `status` | `duration`, `items: [{text, color}]`, `carry?` | 상단 상태 박스 전체. 동시 1개 |
-| `bulletin` | `duration`, `source`, `heading`, `text`, `color?`, `pageSeconds?`, `carry?` | 지도·문자 부분을 덮는 방송 안내. 시계·상태·하단 뉴스 유지. 동시 1개 |
+| `news` | `duration`, `source`, `headline`, `publishedAt?`, `sound?`, `carry?` | 하단 뉴스. 동시 1개. 최대 160자 |
+| `status` | `duration`, `items: [{text, color}]`, `sound?`, `carry?` | 상단 상태 박스 전체. 동시 1개 |
+| `bulletin` | `duration`, `source`, `heading`, `text`, `color?`, `pageSeconds?`, `sound?`, `carry?` | 지도·문자 부분을 덮는 방송 안내. 시계·상태·하단 뉴스 유지. 동시 1개 |
 
 `sender`와 `source`는 `agencies`의 ID다. 문자는 실제 수신 시각을 이벤트의 `at`으로 정한다. 발생·발표 시각을 별도로 주지 않으면 임의로 만들어 표시하지 않는다. 문자 등급은 `안전안내`(기본)·`긴급재난`·`위급재난`이다. 원문에 `[발신자 표시명]`이 있으면 그대로 사용하고, 없으면 앞에 붙인다. 별도 기관명 칸을 반복하지 않는다. 정정은 원 ID를 `corrects`로 참조하는 새 문자다. 서로 다른 기관의 상충된 주장은 데이터 오류가 아니다.
 
@@ -101,7 +101,11 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | `silence` | `duration`, `carry?` | 모든 음원 음소거. 원음 재생 위치는 계속 진행 |
 | `screen` | `duration`, `effect`, `intensity?`, `fadeIn?`, `fadeOut?`, `carry?` | blackout/flash/interference/noise/scanlines/chromatic/dropout/shutdown. intensity 기본 1(0~1). 병렬 조합 가능 |
 
-음원 시작 위치와 연출은 영상 프레임에서 계산한다. 컷 경계를 넘길 음원은 carry를 지정하고 로컬 파일의 길이도 확보한다. 음원을 자동 반복하지 않는다. 큰 음량·지속적인 노이즈·잦은 섬광으로 공포를 대신하지 않는다. 문자에는 엔진이 직접 합성한 공통 수신음이 한 번 재생된다. 실제 기관 경보음을 모방한 소리가 아니다. `sound: false`로 끄거나 `sound: {asset: myTone, duration: 0.8, volume: 0.7}`로 사용자 자산을 지정한다. 기본은 `sound: default`이며 생략해도 같다. 별도 `audio` 이벤트로 수신음을 중복 삽입하지 않는다. `silence`는 공통 수신음도 음소거한다.
+음원 시작 위치와 연출은 영상 프레임에서 계산한다. 컷 경계를 넘길 음원은 carry를 지정하고 로컬 파일의 길이도 확보한다. 음원을 자동 반복하지 않는다. 큰 음량·지속적인 노이즈·잦은 섬광으로 공포를 대신하지 않는다.
+
+문자에는 등급별 기본음이 한 번 재생된다. 안전안내 0.55초, 긴급재난 2.4초, 위급재난 4.2초이며 긴급·위급은 단계적으로 더 크고 긴 EAS풍 경보다. 상태는 등장·항목 변경·해제 때 0.38초, 뉴스는 시작 때 0.7초, 방송 안내는 시작 때 1초의 효과음을 제공한다. 같은 상태를 연속 유지하면 다시 울리지 않고 교체·명시적 빈 항목 해제는 새 상태의 설정을 따른다. 자연 종료는 종료되는 상태의 설정을 따른다. 뉴스·방송 안내 종료나 장문 페이지 전환에는 추가 음이 없다.
+
+`sound: false`로 끄거나 `sound: {asset: myTone, duration: 0.8, volume: 0.7}`로 사용자 자산을 지정한다. `alert`, `status`, `news`, `bulletin` 모두 기본은 `sound: default`이며 생략해도 같다. 별도 `audio` 이벤트로 수신음을 중복 삽입하지 않는다. `silence`는 모든 기본 효과음도 음소거한다.
 
 `shutdown`은 송출 화면을 최대 1.5초 동안 가로선→작은 점으로 수축하고 이벤트 종료까지 검은 화면을 유지한다. 전체 영상을 종료하는 효과가 아니므로 결말에서 충분한 duration을 지정한다. 신호가 사라지기 직전의 정보·음향·이후 침묵까지 작품 흐름으로 구성한다.
 

@@ -1,0 +1,15 @@
+{
+  "duration": 0.55,
+  "sampleRate": 48000,
+  "channels": 1,
+  "seed": 731,
+  "peak": 0.41999998688697815,
+  "clippedSamples": 0,
+  "rms": 0.2369036783400494,
+  "frames": 26400,
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.8127.2 Safari/537.36",
+  "program": "notification.mjs",
+  "tone": "15.1.22",
+  "format": "PCM16LE",
+  "output": "notification.wav"
+}
