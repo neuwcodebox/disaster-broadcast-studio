@@ -24,6 +24,8 @@ export function makeCredits(scenario: Scenario, bundled: Credit[]) {
   if (customMap) sections.unshift(`사용자 지정 지도 경계\n${customMap}`);
   for (const [id, asset] of Object.entries(scenario.assets))
     sections.push(`음원 ${id}\n출처: ${asset.source}\n이용조건: ${asset.license}`);
+  if(scenario.events.some(e=>e.type==='alert'&&e.sound==='default'))
+    sections.push('공통 문자 수신음\n출처: 재난방송실에서 직접 합성한 창작 알림음. 실제 재난 경보음 아님.\n이용조건: CC0 1.0');
   const text = `자료 출처\n\n${sections.join('\n\n')}\n\n원자료는 각 제공자의 조건에 따라 있는 그대로 제공됩니다. 제공기관은 이 창작물의 내용을 보증하거나 후원하지 않습니다.\n`;
   return { entries, customMap, text };
 }

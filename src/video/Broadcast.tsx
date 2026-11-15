@@ -12,10 +12,11 @@ import type { FeatureCollection } from 'geojson';
 import type { Timeline } from '../scenario.js';
 import { FPS, pages } from '../scenario.js';
 import type { Regions } from '../load.js';
-import { stateAt, clock, envelope } from '../timeline.js';
+import { stateAt, clock, envelope, receiptHighlights, statusEntry, shutdownAt } from '../timeline.js';
 import { AlertHistory } from './Alerts.js';
 import { BroadcastMap } from './Map.js';
 import {SignalEffects, signalLevels} from './SignalEffects.js';
+import {notificationSounds} from '../notifications.js';
 import { fonts, bodyFont, numberFont } from './fonts.js';
 export type BroadcastProps = {
   timeline: Timeline;
@@ -76,9 +77,12 @@ export function Broadcast(props: BroadcastProps) {
   const inset = state.visible.find((e) => e.type === 'inset');
   const legend = state.visible.find((e) => e.type === 'legend');
   const signal = signalLevels(state.visible, frame);
+  const mapEvents=[...state.visible,...receiptHighlights(timeline,state.contentFrame)];
+  const entry=statusEntry(state.contentFrame,status?.start??0);
+  const shutdown=shutdownAt(state.visible,frame);
   return (
-    <AbsoluteFill style={{ filter: signal.chromatic > 0 ? 'url(#dbs-chromatic)' : undefined, background: '#080b0d', fontFamily: bodyFont, color: '#dce1e5' }}>
-      <AbsoluteFill style={{ opacity: state.opacity }}>
+    <AbsoluteFill style={{ filter: signal.chromatic > 0 ? 'url(#dbs-chromatic)' : undefined, background: shutdown ? '#000' : '#080b0d', fontFamily: bodyFont, color: '#dce1e5' }}>
+      <AbsoluteFill style={{ opacity: shutdown?.black ? 0 : state.opacity, transform: shutdown ? `scale(${shutdown.x},${shutdown.y})` : undefined, transformOrigin: '50% 50%' }}>
         <header
           style={{
             position: 'absolute',
@@ -95,8 +99,10 @@ export function Broadcast(props: BroadcastProps) {
           {status?.type === 'status' &&
             status.items.map((item, i) => (
               <span
-                key={i}
+                key={`${status.id}-${i}`}
                 style={{
+                  opacity: entry.opacity, transform: `translateY(${entry.offset}px)`,
+                  background: `${item.color}${Math.round(entry.glow*255).toString(16).padStart(2,'0')}`,
                   border: `1px solid ${item.color}`,
                   color: item.color,
                   padding: '3px 10px',
@@ -115,11 +121,12 @@ export function Broadcast(props: BroadcastProps) {
               fontSize: 23,
               fontFamily: numberFont,
               fontVariantNumeric: 'tabular-nums',
-              color: '#bdc7ce',
+              color: state.jumping ? '#eef2f4' : '#bdc7ce',
+              borderBottom: state.jumping ? '1px solid #bdc7ce' : '1px solid transparent',
               letterSpacing: 0.5,
             }}
           >
-            {clock(state.epoch, timeline.scenario.timezone, true)}
+            {clock(state.displayEpoch, timeline.scenario.timezone, true)}
           </time>
         </header>
         <main style={{ position: 'absolute', left: 0, top: 49, right: 640, bottom: 93 }}>
@@ -129,8 +136,8 @@ export function Broadcast(props: BroadcastProps) {
             countries={countries}
             regions={regions}
             provinces={provinces}
-            events={state.visible}
-            frame={frame}
+            events={mapEvents}
+            frame={state.contentFrame}
           />
           {legend?.type === 'legend' && <div style={{ position: 'absolute', left: 24, bottom: 24,
             display: 'flex', flexDirection: 'column', gap: 10, background: '#0b0e10ed',
@@ -158,8 +165,8 @@ export function Broadcast(props: BroadcastProps) {
                 countries={countries}
                 regions={regions}
                 provinces={provinces}
-                events={state.visible}
-                frame={frame}
+                events={mapEvents}
+                frame={state.contentFrame}
                 inset
               />
               <div
@@ -191,7 +198,7 @@ export function Broadcast(props: BroadcastProps) {
             overflow: 'hidden',
           }}
         >
-          <AlertHistory timeline={timeline} frame={frame} />
+          <AlertHistory timeline={timeline} frame={state.contentFrame} />
         </aside>
         {bulletin?.type === 'bulletin' &&
           (() => {
@@ -329,6 +336,7 @@ export function Broadcast(props: BroadcastProps) {
             />
           );
         })}
+      {shutdown?.line && <div style={{position:'absolute',top:'50%',left:'50%',height:2,width:`${shutdown.x*100}%`,transform:'translate(-50%,-50%)',background:'#dce5e9',boxShadow:'0 0 10px #a9c9db'}}/>}
       <SignalEffects frame={frame} seed={timeline.scenario.seed} levels={signal}/>
       {frame < openingFrames && (
         <AbsoluteFill
@@ -365,6 +373,7 @@ export function Broadcast(props: BroadcastProps) {
           </div>
         </AbsoluteFill>
       )}
+      {notificationSounds(timeline).map(event=><Sequence key={event.id} from={event.start} durationInFrames={event.frames}><Audio src={staticFile(audio[event.asset])} volume={timeline.events.some(e=>e.type==='silence'&&e.start<=frame&&frame<e.end)?0:event.volume}/></Sequence>)}
       {timeline.events
         .filter((e) => e.type === 'audio')
         .map((event) => {

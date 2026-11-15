@@ -4,7 +4,9 @@
 
 ## 실행 가능한 시작점
 
-`dbs init`은 스킬의 `examples/receipt.mjs`를 `audio-code/receipt.mjs`로 복사한다. 직접 합성한 짧은 수신음 예제이며 CC0-1.0이다. 실제 정부 경보음을 재현한 것이 아니다.
+문자 수신음은 엔진 공통 기능이다. 생략 시 창작 알림음이 자동 재생되며 작품마다 생성하지 않는다. `alert.sound: false`로 끄거나 `{asset, duration, volume}`으로 다른 음원을 연결한다. 기존 작품의 수신음 `audio` 이벤트와 중복하지 않는다.
+
+아래 합성은 작품 고유 음향이 필요한 경우에 사용한다. 스킬의 `examples/receipt.mjs`를 `audio-code/receipt.mjs`로 직접 복사해 실행할 수 있다. CC0-1.0의 합성 예제이며 실제 정부 경보음이 아니다.
 
 ```sh
 npx dbs audio audio-code/receipt.mjs \
@@ -61,18 +63,22 @@ export default async function ({ Tone, asset }) {
 
 ```yaml
 assets:
-  receipt:
+  customTone:
     path: audio/receipt.wav
-    source: 직접 합성한 수신음. audio-code/receipt.mjs 참조.
+    source: 작품 고유 합성음. audio-code/receipt.mjs 참조.
     license: CC0-1.0
 events:
-  - id: receipt-1
-    type: audio
+  - id: notice-1
+    type: alert
     cut: first
     at: 7
-    duration: 0.55
-    asset: receipt
-    volume: 0.8
+    sender: city
+    text: 다음 안내를 기다려 주십시오.
+    regions: []
+    sound:
+      asset: customTone
+      duration: 0.55
+      volume: 0.8
 ```
 
 WAV 생성과 영상 타임라인은 별개다. 음원 길이·이벤트 길이·offset·페이드·침묵 구간을 실제 구간 영상에서 함께 확인한다. 기존 WAV/FLAC 등 파일도 그대로 사용할 수 있다.

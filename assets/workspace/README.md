@@ -9,10 +9,6 @@ npx dbs frame scenario.yaml --frame 600 --out preview.png
 npx dbs render scenario.yaml --out film.mp4
 ```
 
-`audio/`는 완성 음원, `audio-code/`는 합성 코드 폴더다. 수신음 시작점은 다음 명령으로 WAV를 만든다. 생성한 음원을 `scenario.yaml`의 자산·audio 이벤트에 연결하는 방법은 스킬의 `references/audio.md`를 따른다.
-
-```sh
-npx dbs audio audio-code/receipt.mjs --duration 0.55 --out audio/receipt.wav
-```
+문자 도착 시 엔진의 공통 수신음이 재생된다. `alert.sound: false`로 끄거나 사용자 음원으로 바꾼다. `audio/`는 작품 고유 음원, `audio-code/`는 필요한 합성 코드를 두는 폴더다. [음향 가이드](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/scenario-writing/references/audio.md)를 참고한다.
 
 지역·기관·시각·문안을 작품에 맞게 바꾼다. 컷 내부는 실시간이며 시간 도약은 새 컷으로 지정한다. 결과와 함께 생성한 `.credits.txt`를 영상 게시 설명에 포함한다. 초기화는 npm 설치나 영상 게시를 수행하지 않는다.

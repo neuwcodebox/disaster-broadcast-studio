@@ -1,6 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { readBundledJson } from './assets.js';
+import {notificationAsset} from './notifications.js';
+import { readBundledJson, packageRoot } from './assets.js';
 export { packageRoot } from './assets.js';
 import { parseDocument } from 'yaml';
 import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
@@ -84,6 +85,8 @@ export async function loadScenario(file: string): Promise<Loaded> {
     const assetPaths: Record<string, string> = {};
     for (const [key, asset] of Object.entries(scenario.assets))
       assetPaths[key] = await localFile(root, asset.path, `assets.${key}.path`);
+    if(timeline.events.some(e=>e.type==='alert'&&e.sound==='default'))
+      assetPaths[notificationAsset]=path.join(packageRoot,'assets/audio/notification.wav');
     const warnings: string[] = [];
     const alerts = timeline.events.filter((e) => e.type === 'alert');
     for (let i = 0; i < alerts.length; i++) {

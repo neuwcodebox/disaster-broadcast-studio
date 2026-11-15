@@ -12,7 +12,7 @@ test('workspace initialization creates a usable YAML without installing per-proj
   await writeFile(path.join(root,'package.json'),'{}');
   const result=await initializeWorkspace(root);
   assert.equal((await loadScenario(result.scenario)).timeline.durationInFrames,1800);
-  for(const file of ['audio-code/receipt.mjs'])assert.ok((await stat(path.join(root,file))).isFile());
+  assert.ok((await stat(path.join(root,'audio-code'))).isDirectory());
   assert.ok((await stat(path.join(root,'audio'))).isDirectory());
   assert.equal(await readFile(path.join(root,'package.json'),'utf8'),'{}');
   assert.ok(!(await readdir(root)).includes('.agents'));
@@ -21,7 +21,7 @@ test('workspace initialization creates a usable YAML without installing per-proj
  } finally {await rm(root,{recursive:true,force:true});}
 });
 test('existing user paths are preserved and collisions fail before creating files',async()=>{
- for(const conflict of ['scenario.yaml','README.md','audio-code/receipt.mjs']){
+ for(const conflict of ['scenario.yaml','README.md']){
   const root=await mkdtemp(path.join(os.tmpdir(),'dbs-conflict-'));
   try {
    await mkdir(path.dirname(path.join(root,conflict)),{recursive:true});

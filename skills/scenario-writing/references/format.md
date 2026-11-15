@@ -2,7 +2,7 @@
 
 ## 독립 작업 공간
 
-Node.js 22 이상을 사용한다. npm 패키지는 `disaster-broadcast-studio`, 실행명은 `dbs`다. 공개 npm 게시 전에는 제공된 `.tgz`를 `npm install /path/disaster-broadcast-studio-0.1.0.tgz`로 설치한다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `audio/`, `audio-code/receipt.mjs`를 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
+Node.js 22 이상을 사용한다. npm 패키지는 `disaster-broadcast-studio`, 실행명은 `dbs`다. 공개 npm 게시 전에는 제공된 `.tgz`를 `npm install /path/disaster-broadcast-studio-0.1.0.tgz`로 설치한다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `audio/`, `audio-code/`를 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
 
 ```sh
 npx dbs schema --out scenario.schema.json
@@ -44,9 +44,9 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 ## 컷과 시간
 
-컷은 `{id, duration, storyTime, fadeIn?, fadeOut?}`다. 길이·페이드는 초, `storyTime`은 시간대가 있는 ISO 시각이다. 컷은 목록 순서대로 이어진다. 컷 내부 시계는 현실과 1:1로 흐른다. 다음 `storyTime`은 이전 컷 종료 이후여야 한다. 배속 필드는 없으며 시간 생략은 컷 경계에서만 일어난다.
+컷은 `{id, duration, storyTime, clockTransition?, fadeIn?, fadeOut?}`다. 길이·페이드는 초, `storyTime`은 시간대가 있는 ISO 시각이다. 컷은 목록 순서대로 이어진다. 컷 내부 시계는 현실과 1:1로 흐른다. 다음 `storyTime`은 이전 컷 종료 이후여야 한다. 배속 필드는 없으며 시간 생략은 컷 경계에서만 일어난다.
 
-영상 처음 5초는 제목·허구 고지 오프닝이다. 첫 컷 시간에 포함되므로 본문 읽기·중요 사건은 그 이후에 배치한다. 컷 페이드와 `screen.blackout`으로 시간 도약의 호흡을 만들 수 있다. 편집을 위해 매 사건마다 컷을 나누지 않는다.
+영상 처음 5초는 제목·허구 고지 오프닝이다. 첫 컷 시간에 포함되므로 본문 읽기·중요 사건은 그 이후에 배치한다. 시간을 건너뛰는 컷에 `clockTransition: 1.2`를 주면 첫 1.2초 동안 이전 화면을 유지하고 시계만 이전 종료 시각에서 새 시각으로 빠르게 이동한다. 이후 정확한 현재 시각에서 실시간으로 흐른다. 첫 컷에는 지정하지 않는다. 새 문자·뉴스·상태·지도 변화는 전환이 끝난 후 약 0.1~0.4초 간격을 두고 배치해 기존 이력과 구분한다. 페이드는 선택이며 시계 전환을 가리지 않게 한다. 편집을 위해 매 사건마다 컷을 나누지 않는다.
 
 공통 이벤트 필드는 `id`, `type`, `cut`, `at`다. `at`은 해당 컷 시작 후 초다. 문자 이외에는 양수 `duration`이 필요하며 활성 구간은 `[시작, 종료)`다. 컷을 넘겨 유지하려면 `carry: true`를 명시하고 끝이 전체 영상 안에 있어야 한다. ID는 영문·숫자·밑줄·하이픈을 사용한다. 지역 ID도 문자열로 쓴다.
 
@@ -54,7 +54,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 | `type` | 추가 필드 | 동작 |
 | --- | --- | --- |
-| `alert` | `sender`, `text`, `level?`, `regions?`, `corrects?`, `occurredAt?`, `publishedAt?`, `pageSeconds?` | 수신 이후 최신순 이력에 남는다. duration/carry 없음 |
+| `alert` | `sender`, `text`, `level?`, `regions?`, `corrects?`, `occurredAt?`, `publishedAt?`, `pageSeconds?`, `mapHighlight?`, `sound?` | 수신 이후 최신순 이력에 남는다. duration/carry 없음 |
 | `news` | `duration`, `source`, `headline`, `publishedAt?`, `carry?` | 하단 뉴스. 동시 1개. 최대 160자 |
 | `status` | `duration`, `items: [{text, color}]`, `carry?` | 상단 상태 박스 전체. 동시 1개 |
 | `bulletin` | `duration`, `source`, `heading`, `text`, `color?`, `pageSeconds?`, `carry?` | 지도·문자 부분을 덮는 방송 안내. 시계·상태·하단 뉴스 유지. 동시 1개 |
@@ -65,7 +65,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 문자와 방송 안내 본문은 100개 문자소 단위에서 자연스러운 공백을 찾아 분할하며 원문을 보존한다. `alert.pageSeconds` 기본 8초, `bulletin.pageSeconds` 기본 12초, 둘 다 최소 3초다. 장문 안내 전체 페이지가 끝나기 전에 다른 안내로 덮지 않는다. `validate`의 문자 읽기 경고를 확인한다. 방송 안내 길이도 작성자가 읽어 검토한다.
 
-상태 박스에는 문구와 `#RRGGBB` 색상만 있다. 경보 종류·단계·규칙을 엔진이 판단하지 않는다. 전체 문구를 `DEFCON 4`, `갑호비상`, `소방동원령 1호`처럼 짧게 작성한다. 배열 순서대로 나란히 표시한다. 변경할 때는 현재 이벤트 종료와 다음 이벤트 시작을 맞춘다. `items: []`나 상태 이벤트가 없는 구간에는 박스가 없다. 화면 폭에 맞는 개수와 길이로 작성하고 실제 프레임을 확인한다.
+상태 박스는 등장 후 약 0.55초 동안 짧은 상향 이동·명도 변화를 거쳐 자리 잡는다. 프레임 기반이며 별도 애니메이션 데이터를 작성할 필요가 없다. 상태 박스에는 문구와 `#RRGGBB` 색상만 있다. 경보 종류·단계·규칙을 엔진이 판단하지 않는다. 전체 문구를 `DEFCON 4`, `갑호비상`, `소방동원령 1호`처럼 짧게 작성한다. 배열 순서대로 나란히 표시한다. 변경할 때는 현재 이벤트 종료와 다음 이벤트 시작을 맞춘다. `items: []`나 상태 이벤트가 없는 구간에는 박스가 없다. 화면 폭에 맞는 개수와 길이로 작성하고 실제 프레임을 확인한다.
 
 ## 지도 연출
 
@@ -85,7 +85,9 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 행정구역의 채우기 불투명도 `fillOpacity` 기본 0.36, 윤곽선 `strokeColor` 기본 color, `strokeOpacity` 기본 1, `strokeWidth` 기본 2px다. 채우기 없이 경계만 표시하려면 `fillOpacity: 0`, 채우기만 표시하려면 `strokeWidth: 0`을 준다. 같은 지역에 여러 이벤트를 겹칠 수 있으며 채우기 위에 윤곽선이 놓이고 같은 종류 안에서는 이벤트 순서대로 합성한다. `legend`는 작품이 지정한 의미만 설명한다. 범례가 없으면 엔진은 자동으로 의미를 붙이지 않는다. 서로 다른 사실을 나타내는 색·선은 문안·시점·범례와 함께 작성한다.
 
-문자 `regions`와 지도 연출은 독립적이다. 문자 도착만으로 임의의 영역을 자동 강조하지 않는다. 대상 범위·발신기관·행동 지시와 지도 강조를 함께 검토한다. 지역 강조·지점·영역·선은 여러 개를 병렬로 사용할 수 있다.
+문자는 `regions`에 지정된 실제 경계를 수신 시 기본 2.4초 동안 밝게 점멸한다. `mapHighlight: {duration: 3, color: '#d6e2ec'}`로 바꾸거나 `mapHighlight: false`로 끈다. 빈 지역 목록은 강조하지 않는다. 이 효과는 짧은 수신 표시이며 지속적인 발송 이력 채우기·위기경보 경계는 별도 `region`으로 작성한다. 엔진이 기관명에서 발송 범위를 추측하지 않는다.
+
+기관명은 발송 대상과 다를 수 있다. 도청이 특정 시군만 대상으로 보내면 본문에 그 시군을 명시하고 그 코드만 지정한다. ‘도 전역’ 문자는 내장 목록에서 도 소속 시군 전체를 조회해 포함한다. 모든 문자에서 본문 대상·`regions`·지속 지도 표시를 대조한다. 의도적인 불일치는 작성 근거를 작품 기록에 남기며 `mapHighlight: false`와 별도 지도 이벤트로 표현할 수 있다. 지역 강조·지점·영역·선은 여러 개를 병렬로 사용할 수 있다.
 
 음원 코드 실행과 WAV 제작은 [Tone.js 음원 제작](audio.md)을 따른다.
 
@@ -95,9 +97,11 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | --- | --- | --- |
 | `audio` | `duration`, `asset`, `offset?`, `volume?`, `fadeIn?`, `fadeOut?`, `carry?` | 로컬 음원. offset 초, volume 기본 1(0~2), 페이드 기본 0 |
 | `silence` | `duration`, `carry?` | 모든 음원 음소거. 원음 재생 위치는 계속 진행 |
-| `screen` | `duration`, `effect`, `intensity?`, `fadeIn?`, `fadeOut?`, `carry?` | blackout/flash/interference/noise/scanlines/chromatic/dropout. intensity 기본 1(0~1). 병렬 조합 가능 |
+| `screen` | `duration`, `effect`, `intensity?`, `fadeIn?`, `fadeOut?`, `carry?` | blackout/flash/interference/noise/scanlines/chromatic/dropout/shutdown. intensity 기본 1(0~1). 병렬 조합 가능 |
 
-음원 시작 위치와 연출은 영상 프레임에서 계산한다. 컷 경계를 넘길 음원은 carry를 지정하고 로컬 파일의 길이도 확보한다. 음원을 자동 반복하지 않는다. 큰 음량·지속적인 노이즈·잦은 섬광으로 공포를 대신하지 않는다. 실제 기관의 경보음을 기본 삽입하지 않는다.
+음원 시작 위치와 연출은 영상 프레임에서 계산한다. 컷 경계를 넘길 음원은 carry를 지정하고 로컬 파일의 길이도 확보한다. 음원을 자동 반복하지 않는다. 큰 음량·지속적인 노이즈·잦은 섬광으로 공포를 대신하지 않는다. 문자에는 엔진이 직접 합성한 공통 수신음이 한 번 재생된다. 실제 기관 경보음을 모방한 소리가 아니다. `sound: false`로 끄거나 `sound: {asset: myTone, duration: 0.8, volume: 0.7}`로 사용자 자산을 지정한다. 기본은 `sound: default`이며 생략해도 같다. 별도 `audio` 이벤트로 수신음을 중복 삽입하지 않는다. `silence`는 공통 수신음도 음소거한다.
+
+`shutdown`은 송출 화면을 최대 1.5초 동안 가로선→작은 점으로 수축하고 이벤트 종료까지 검은 화면을 유지한다. 전체 영상을 종료하는 효과가 아니므로 결말에서 충분한 duration을 지정한다. 신호가 사라지기 직전의 정보·음향·이후 침묵까지 작품 흐름으로 구성한다.
 
 ## 짧은 상태 표시 예
 

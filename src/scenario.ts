@@ -23,6 +23,13 @@ const alert = z
     text: z.string().min(1).max(4000),
     level: z.enum(['안전안내', '긴급재난', '위급재난']).default('안전안내'),
     regions: z.array(z.string()).default([]),
+    mapHighlight: z.union([z.literal(false), z.object({
+      duration: z.number().positive().max(20).default(2.4),
+      color: color.default('#d6e2ec'),
+    }).strict()]).default({duration: 2.4, color: '#d6e2ec'}),
+    sound: z.union([z.literal(false), z.literal('default'), z.object({
+      asset: id, duration: z.number().positive(), volume: z.number().min(0).max(2).default(0.8),
+    }).strict()]).default('default'),
     corrects: id.optional(),
     occurredAt: timestamp.optional(),
     publishedAt: timestamp.optional(),
@@ -135,7 +142,7 @@ const screen = z
   .object({
     ...span,
     type: z.literal('screen'),
-    effect: z.enum(['blackout', 'flash', 'interference', 'noise', 'scanlines', 'chromatic', 'dropout']),
+    effect: z.enum(['blackout', 'flash', 'interference', 'noise', 'scanlines', 'chromatic', 'dropout', 'shutdown']),
     intensity: z.number().min(0).max(1).default(1),
     fadeIn: seconds.default(0),
     fadeOut: seconds.default(0),
@@ -171,6 +178,7 @@ export const scenarioSchema = z
             id,
             duration: z.number().positive(),
             storyTime: timestamp,
+            clockTransition: seconds.default(0),
             fadeIn: seconds.default(0),
             fadeOut: seconds.default(0),
           })
@@ -280,6 +288,8 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       for (const r of e.regions)
         if (!regionIds.has(r)) errors.push(`${path}.regions: unknown region ${r}`);
     if (e.type === 'alert') {
+      if (typeof e.sound === 'object' && !(e.sound.asset in scenario.assets))
+        errors.push(`${path}.sound.asset: unknown asset ${e.sound.asset}`);
       if (!(e.sender in scenario.agencies))
         errors.push(`${path}.sender: unknown agency ${e.sender}`);
       if (e.corrects) {
@@ -309,6 +319,12 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       if (prior && prior.start >= e.start)
         errors.push(`${e.id}.corrects: correction must follow original alert`);
     }
+  }
+  for (const cut of cuts) {
+    if (frames(cut.clockTransition) >= cut.end-cut.start)
+      errors.push(`cuts (${cut.id}).clockTransition: must be shorter than cut`);
+    if (cut.start === 0 && cut.clockTransition)
+      errors.push(`cuts (${cut.id}).clockTransition: requires a previous cut`);
   }
   // Single-owner tracks cannot have ambiguous concurrent values. Independent layers can overlap.
   for (const type of ['camera', 'inset', 'news', 'status', 'bulletin', 'legend'] as const) {

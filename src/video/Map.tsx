@@ -230,7 +230,7 @@ export function BroadcastMap({
             event.id,
             event.pulse
               ? moving
-                ? event.fillOpacity * (0.65 + 0.175 * (1 + Math.sin(((frame - event.start) / 60) * Math.PI)))
+                ? event.fillOpacity * (0.45 + 0.55 * (0.5 + 0.5 * Math.cos(((frame - event.start) / 60) * Math.PI * 2.6)))
                 : 0
               : event.fillOpacity,
           );
@@ -297,7 +297,7 @@ export function BroadcastMap({
                     width: '100%',
                     height: '100%',
                     opacity: String(
-                      event.fillOpacity * (0.65 + 0.175 * (1 + Math.sin(((frame - event.start) / 60) * Math.PI))),
+                      event.fillOpacity * (0.45 + 0.55 * (0.5 + 0.5 * Math.cos(((frame - event.start) / 60) * Math.PI * 2.6))),
                     ),
                   });
                   pulseLayers.current!.append(layer);
@@ -344,7 +344,7 @@ export function BroadcastMap({
   useEffect(() => {
     for (const image of pulseLayers.current?.querySelectorAll<HTMLCanvasElement>('canvas') ?? [])
       image.style.opacity = String(
-        Number(image.dataset.opacity) * (0.65 + 0.175 * (1 + Math.sin(((frame - Number(image.dataset.start)) / 60) * Math.PI))),
+        Number(image.dataset.opacity) * (0.45 + 0.55 * (0.5 + 0.5 * Math.cos(((frame - Number(image.dataset.start)) / 60) * Math.PI * 2.6))),
       );
   }, [frame]);
   return (
