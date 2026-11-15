@@ -60,6 +60,25 @@ export function parseRegions(raw: unknown): Regions {
   }
   return data;
 }
+
+async function loadGrids(events: Timeline['events'], assetPaths: Record<string, string>) {
+  const grids: Record<string, Grid> = Object.create(null);
+  for (const event of events) {
+    if (event.type !== 'grid' || Object.hasOwn(grids, event.asset)) continue;
+    try {
+      const source = await readFile(assetPaths[event.asset], 'utf8');
+      const result = gridSchema.safeParse(JSON.parse(source));
+      if (!result.success)
+        throw Error(result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join('\n'));
+      grids[event.asset] = result.data;
+    } catch (error) {
+      const location = `events[${event.order}] (${event.id}).asset / assets.${event.asset}.path`;
+      throw Error(`${location}: invalid grid: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return grids;
+}
+
 export async function loadScenario(file: string): Promise<Loaded> {
   const absolute = path.resolve(file),
     root = path.dirname(absolute);
@@ -88,18 +107,7 @@ export async function loadScenario(file: string): Promise<Loaded> {
     const assetPaths: Record<string, string> = {};
     for (const [key, asset] of Object.entries(scenario.assets))
       assetPaths[key] = await localFile(root, asset.path, `assets.${key}.path`);
-    const grids: Record<string, Grid> = {};
-    for (const event of timeline.events) {
-      if (event.type !== 'grid' || Object.hasOwn(grids, event.asset)) continue;
-      try {
-        const result = gridSchema.safeParse(JSON.parse(await readFile(assetPaths[event.asset], 'utf8')));
-        if (!result.success)
-          throw Error(result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n'));
-        Object.defineProperty(grids, event.asset, { value: result.data, enumerable: true });
-      } catch (error) {
-        throw Error(`events[${event.order}] (${event.id}).asset / assets.${event.asset}.path: invalid grid: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
+    const grids = await loadGrids(timeline.events, assetPaths);
     const usedSounds = new Set(notificationSounds(timeline).map((sound) => sound.asset));
     for (const sound of Object.values(defaultSounds))
       if (usedSounds.has(sound.asset))

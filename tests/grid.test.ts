@@ -11,7 +11,8 @@ import { stateAt } from '../src/timeline.js';
 import { loadScenario } from '../src/load.js';
 import { PreviewProject } from '../src/preview/project.js';
 import { makeCredits } from '../src/credits.js';
-import { gridRuns, MapGrids, paintGrid } from '../src/video/map/grid.js';
+import { MapGrids } from '../src/video/map/grid/index.js';
+import { gridRuns, paintGrid } from '../src/video/map/grid/raster.js';
 
 const grid = () => ({ bounds: [126, 36, 128, 38], cells: [
   ['#123456', '#abcdef80'], [null, '#abcdef'],
@@ -61,7 +62,8 @@ test('grid layers support fades, cut carry, time-jump hold, arbitrary seeking an
   const t = compile(scenarioSchema.parse(raw), new Set());
   const visible = (frame: number) => stateAt(t, frame).visible.filter(e => e.type === 'grid');
   const markup = (frame: number) => renderToStaticMarkup(React.createElement(MapGrids, {
-    events: visible(frame), frame: stateAt(t, frame).contentFrame,
+    events: visible(frame), grids: { field: gridSchema.parse(grid()) }, projection: null,
+    frame: stateAt(t, frame).contentFrame,
   }));
   assert.equal(markup(119), '');
   assert.match(markup(120), /opacity:0/);
