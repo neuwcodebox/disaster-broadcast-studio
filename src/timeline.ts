@@ -95,13 +95,16 @@ export function stateAt(t: Timeline, frame: number) {
   const jumping = index > 0 && transition > 0 && frame < cut.start + transition;
   const contentFrame = jumping ? cut.start - 1 : frame;
   const previous = index > 0 ? t.cuts[index - 1] : null;
+  const previousEnd = previous
+    ? previous.epoch + ((previous.end - previous.start) * 1000) / FPS
+    : cut.epoch;
   const epoch = cut.epoch + ((frame - cut.start) * 1000) / FPS;
   const p = jumping ? (frame - cut.start) / transition : 1;
   const clockPhase = jumping ? (p < 0.15 ? 'lead' : p < 0.75 ? 'run' : 'hold') : null;
   const roll = Math.max(0, Math.min(1, (p - 0.15) / 0.6));
   const displayEpoch = jumping
     ? mix(
-        previous!.epoch + ((previous!.end - previous!.start) * 1000) / FPS,
+        previousEnd,
         cut.epoch + (transition * 1000) / FPS,
         roll,
       )
@@ -114,6 +117,13 @@ export function stateAt(t: Timeline, frame: number) {
     displayEpoch,
     jumping,
     clockPhase,
+    timeJump: jumping && cut.epoch > previousEnd
+      ? {
+          progress: (frame - cut.start) / Math.max(1, transition - 1),
+          elapsedFrames: frame - cut.start,
+          style: cut.clockTransitionStyle,
+        }
+      : null,
     contentFrame,
     camera: cameraAt(t, contentFrame),
     alerts: t.events.filter((e) => e.type === 'alert' && e.start <= contentFrame).reverse(),

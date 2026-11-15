@@ -16,6 +16,7 @@ import { bodyFont, numberFont } from './fonts.js';
 import { News, Status } from './Information.js';
 import { changeProgress, transitionAt } from './transitions.js';
 import { layout } from './layout.js';
+import { TimeJump, timeJumpStrength } from './TimeJump.js';
 export type BroadcastProps = {
   timeline: Timeline;
   regions: Regions;
@@ -35,6 +36,7 @@ export function Broadcast(props: BroadcastProps) {
   const signal = signalLevels(state.visible, frame);
   const mapEvents = [...state.visible, ...receiptHighlights(timeline, state.contentFrame)];
   const shutdown = shutdownAt(state.visible, frame);
+  const jumpStrength = state.timeJump?.style === 'fast-forward' ? timeJumpStrength(state.timeJump) : 0;
   return (
     <AbsoluteFill
       style={{
@@ -49,6 +51,7 @@ export function Broadcast(props: BroadcastProps) {
           opacity: shutdown?.black ? 0 : state.opacity,
           transform: shutdown ? `scale(${shutdown.x},${shutdown.y})` : undefined,
           transformOrigin: '50% 50%',
+          isolation: 'isolate',
         }}
       >
         <header
@@ -67,6 +70,8 @@ export function Broadcast(props: BroadcastProps) {
           <Status timeline={timeline} frame={state.contentFrame} />
           <time
             style={{
+              position: 'relative',
+              zIndex: 1,
               marginLeft: 'auto',
               flexShrink: 0,
               fontSize: 32,
@@ -85,141 +90,150 @@ export function Broadcast(props: BroadcastProps) {
             {clock(state.displayEpoch, timeline.scenario.timezone, true)}
           </time>
         </header>
-        <main
+        <AbsoluteFill
           style={{
-            position: 'absolute',
-            left: 0,
-            top: layout.header + 1,
-            right: layout.sidebar,
-            bottom: layout.footer + 1,
+            filter: jumpStrength > 0
+              ? `url(#dbs-time-jump) saturate(${1 - jumpStrength * 0.35})`
+              : undefined,
           }}
         >
-          <BroadcastMap
-            camera={state.camera}
-            countries={countries}
-            regions={regions}
-            provinces={provinces}
-            events={mapEvents}
-            frame={state.contentFrame}
-          />
-          {legend?.type === 'legend' && (
-            <div
-              style={{
-                position: 'absolute',
-                left: 24,
-                bottom: 24,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-                background: '#0b0e10ed',
-                padding: '14px 18px',
-                fontSize: 30,
-                color: '#d0d5da',
-                opacity: changeProgress(state.contentFrame, legend.start),
-                transform: `translateY(${10 * (1 - changeProgress(state.contentFrame, legend.start))}px)`,
-              }}
-            >
-              {legend.items.map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span
-                    style={{
-                      width: 23,
-                      height: item.symbol === 'line' ? 0 : 16,
-                      background: item.symbol === 'fill' ? item.color : 'transparent',
-                      border: item.symbol === 'fill' ? 'none' : `2px solid ${item.color}`,
-                    }}
-                  />
-                  <span>{item.text}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {inset?.type === 'inset' && (
-            <div
-              style={{
-                position: 'absolute',
-                right: 20,
-                bottom: 20,
-                width: 420,
-                height: 290,
-                border: '1px solid #78858e',
-                opacity: changeProgress(state.contentFrame, inset.start),
-                transform: `translateY(${10 * (1 - changeProgress(state.contentFrame, inset.start))}px)`,
-              }}
-            >
-              <BroadcastMap
-                camera={inset.camera}
-                countries={countries}
-                regions={regions}
-                provinces={provinces}
-                events={mapEvents}
-                frame={state.contentFrame}
-                inset
-              />
+          <main
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: layout.header + 1,
+              right: layout.sidebar,
+              bottom: layout.footer + 1,
+            }}
+          >
+            <BroadcastMap
+              camera={state.camera}
+              countries={countries}
+              regions={regions}
+              provinces={provinces}
+              events={mapEvents}
+              frame={state.contentFrame}
+            />
+            {legend?.type === 'legend' && (
               <div
                 style={{
                   position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  padding: '7px 12px',
-                  background: '#0b0e10f2',
-                  borderBottom: '1px solid #485159',
-                  fontSize: 28,
+                  left: 24,
+                  bottom: 24,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  background: '#0b0e10ed',
+                  padding: '14px 18px',
+                  fontSize: 30,
+                  color: '#d0d5da',
+                  opacity: changeProgress(state.contentFrame, legend.start),
+                  transform: `translateY(${10 * (1 - changeProgress(state.contentFrame, legend.start))}px)`,
                 }}
               >
-                {inset.title}
+                {legend.items.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span
+                      style={{
+                        width: 23,
+                        height: item.symbol === 'line' ? 0 : 16,
+                        background: item.symbol === 'fill' ? item.color : 'transparent',
+                        border: item.symbol === 'fill' ? 'none' : `2px solid ${item.color}`,
+                      }}
+                    />
+                    <span>{item.text}</span>
+                  </div>
+                ))}
               </div>
+            )}
+            {inset?.type === 'inset' && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 20,
+                  bottom: 20,
+                  width: 420,
+                  height: 290,
+                  border: '1px solid #78858e',
+                  opacity: changeProgress(state.contentFrame, inset.start),
+                  transform: `translateY(${10 * (1 - changeProgress(state.contentFrame, inset.start))}px)`,
+                }}
+              >
+                <BroadcastMap
+                  camera={inset.camera}
+                  countries={countries}
+                  regions={regions}
+                  provinces={provinces}
+                  events={mapEvents}
+                  frame={state.contentFrame}
+                  inset
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    padding: '7px 12px',
+                    background: '#0b0e10f2',
+                    borderBottom: '1px solid #485159',
+                    fontSize: 28,
+                  }}
+                >
+                  {inset.title}
+                </div>
+              </div>
+            )}
+          </main>
+          <aside
+            style={{
+              position: 'absolute',
+              top: layout.header + 1,
+              right: 0,
+              bottom: layout.footer + 1,
+              width: layout.sidebar,
+              borderLeft: '1px solid #495159',
+              background: '#0c1012',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              <AlertHistory timeline={timeline} frame={state.contentFrame} />
             </div>
+            {state.chat && <ChatPanel timeline={timeline} chat={state.chat} frame={state.contentFrame} />}
+          </aside>
+          {[bulletins.previous, bulletins.current].map(
+            (bulletin, i) =>
+              bulletin && (
+                <Bulletin
+                  key={bulletin.id}
+                  event={bulletin}
+                  source={timeline.scenario.agencies[bulletin.source]}
+                  progress={i === 0 ? 1 - bulletins.progress : bulletins.progress}
+                />
+              ),
           )}
-        </main>
-        <aside
-          style={{
-            position: 'absolute',
-            top: layout.header + 1,
-            right: 0,
-            bottom: layout.footer + 1,
-            width: layout.sidebar,
-            borderLeft: '1px solid #495159',
-            background: '#0c1012',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            <AlertHistory timeline={timeline} frame={state.contentFrame} />
-          </div>
-          {state.chat && <ChatPanel timeline={timeline} chat={state.chat} frame={state.contentFrame} />}
-        </aside>
-        {[bulletins.previous, bulletins.current].map(
-          (bulletin, i) =>
-            bulletin && (
-              <Bulletin
-                key={bulletin.id}
-                event={bulletin}
-                source={timeline.scenario.agencies[bulletin.source]}
-                progress={i === 0 ? 1 - bulletins.progress : bulletins.progress}
-              />
-            ),
-        )}
-        <footer
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: layout.footer,
-            borderTop: '1px solid #606a72',
-            display: 'flex',
-            alignItems: 'center',
-            background: '#0b0e10',
-            padding: '0 26px',
-            gap: 24,
-          }}
-        >
-          <News timeline={timeline} frame={state.contentFrame} />
-        </footer>
+          <footer
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: layout.footer,
+              borderTop: '1px solid #606a72',
+              display: 'flex',
+              alignItems: 'center',
+              background: '#0b0e10',
+              padding: '0 26px',
+              gap: 24,
+            }}
+          >
+            <News timeline={timeline} frame={state.contentFrame} />
+          </footer>
+        </AbsoluteFill>
+        <TimeJump jump={state.timeJump} />
       </AbsoluteFill>
       {state.visible
         .filter(

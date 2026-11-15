@@ -253,6 +253,7 @@ export const scenarioSchema = z
             duration: z.number().positive(),
             storyTime: timestamp,
             clockTransition: seconds.default(0),
+            clockTransitionStyle: z.enum(['fast-forward', 'blink']).default('fast-forward'),
             fadeIn: seconds.default(0),
             fadeOut: seconds.default(0),
           })
