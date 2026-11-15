@@ -1,26 +1,23 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
-import type { Map as MapInstance, GeoJSONSource, StyleSpecification } from 'maplibre-gl';
+import type { Map as MapInstance, StyleSpecification } from 'maplibre-gl';
 import { useDelayRender, cancelRender, staticFile } from 'remotion';
 import type { FeatureCollection } from 'geojson';
 import type { Camera, CompiledEvent } from '../scenario.js';
 import type { Regions } from '../load.js';
-
+import {regionOpacity} from '../timeline.js';
 const style = (
   countries: FeatureCollection,
   regions: Regions,
   provinces: FeatureCollection,
 ): StyleSpecification => ({
   version: 8,
+  transition: { duration: 0, delay: 0 },
   sources: {
     land: { type: 'geojson', data: countries, tolerance: 0 },
     regions: { type: 'geojson', data: regions, tolerance: 0 },
     provinces: { type: 'geojson', data: provinces, tolerance: 0 },
-    highlights: {
-      type: 'geojson',
-      tolerance: 0,
-      data: { type: 'FeatureCollection', features: [] },
-    },
+
   },
   layers: [
     { id: 'sea', type: 'background', paint: { 'background-color': '#0a0c0e' } },
@@ -56,18 +53,6 @@ const style = (
         'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.7, 9, 1.2],
         'line-opacity': 0.65,
       },
-    },
-    {
-      id: 'highlight-fill',
-      type: 'fill',
-      source: 'highlights',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.36 },
-    },
-    {
-      id: 'highlight-line',
-      type: 'line',
-      source: 'highlights',
-      paint: { 'line-color': ['get', 'strokeColor'], 'line-width': ['get', 'strokeWidth'], 'line-opacity': ['get', 'strokeOpacity'] },
     },
   ],
 });
@@ -113,252 +98,82 @@ function arrangeLabels(container: HTMLDivElement) {
     occupied.push(rect);
   }
 }
-export function BroadcastMap({
-  camera,
-  countries,
-  regions,
-  provinces,
-  events,
-  frame,
-  inset = false,
-  moving = false,
-}: {
-  camera: Camera;
-  countries: FeatureCollection;
-  regions: Regions;
-  provinces: FeatureCollection;
-  events: CompiledEvent[];
-  frame: number;
-  inset?: boolean;
-  moving?: boolean;
+export function BroadcastMap({camera,countries,regions,provinces,events,frame,inset=false}: {
+  camera:Camera;countries:FeatureCollection;regions:Regions;provinces:FeatureCollection;
+  events:CompiledEvent[];frame:number;inset?:boolean;moving?:boolean;
 }) {
-  const container = useRef<HTMLDivElement>(null),
-    map = useRef<MapInstance | null>(null);
-  const { delayRender, continueRender } = useDelayRender();
-  const markers = useRef<HTMLDivElement>(null);
-  const snapshot = useRef<HTMLCanvasElement>(null);
-  const outlineSnapshot = useRef<HTMLCanvasElement>(null);
-  const pulseLayers = useRef<HTMLDivElement>(null);
-  const geometrySignature = useRef('');
-  const completedSignature = useRef('');
-  // Initialize once. Every camera/layer update is explicitly awaited before capture.
-  useEffect(() => {
-    const handle = delayRender('Initializing offline map');
-    let m: MapInstance;
+  const container=useRef<HTMLDivElement>(null),map=useRef<MapInstance|null>(null);
+  const snapshot=useRef<HTMLCanvasElement>(null),markers=useRef<HTMLDivElement>(null);
+  const paths=useRef(new Map<string,string>()),capturedCamera=useRef(''),completed=useRef('');
+  const {delayRender,continueRender}=useDelayRender();
+  const pending=useRef<(()=>void)|null>(null);
+  const [revision,setRevision]=useState(0);
+  useLayoutEffect(()=>{pending.current?.();pending.current=null;},[revision]);
+  useEffect(()=>{
+    const handle=delayRender('Initializing offline map');
     maplibregl.setWorkerUrl(staticFile('maplibre-gl-worker.mjs'));
+    let m:MapInstance;
     try {
-      m = new maplibregl.Map({
-        container: container.current!,
-        style: style(countries, regions, provinces),
-        center: camera.center,
-        zoom: camera.zoom,
-        bearing: camera.bearing,
-        pitch: camera.pitch,
-        interactive: false,
-        attributionControl: false,
-        fadeDuration: 0,
-        canvasContextAttributes: { alpha: true, preserveDrawingBuffer: true, antialias: true },
-      });
-    } catch (e) {
-      cancelRender(e as Error);
-      return;
-    }
-    map.current = m;
-    geometrySignature.current = '';
-    completedSignature.current = '';
-    m.on('error', (e) => cancelRender(new Error(`MapLibre: ${e.error.message}`)));
-    m.once('load', () => {
-      m.resize();
-      continueRender(handle);
-    });
-    return () => {
-      map.current = null;
-      m.remove();
-    };
-  }, []);
-  useEffect(() => {
-    const m = map.current;
-    if (!m) return;
-    const regionsNow = events.filter((e) => e.type === 'region');
-    const signature = JSON.stringify([
-      camera,
-      moving,
-      events.filter((e) => ['region', 'marker', 'zone', 'line'].includes(e.type)),
-      moving && regionsNow.some((e) => e.pulse) ? frame : null,
-    ]);
-    if (signature === completedSignature.current) return;
-    const handle = delayRender(`Map frame ${frame}`);
-    const update = () => {
+      m=new maplibregl.Map({container:container.current!,style:style(countries,regions,provinces),
+        ...camera,interactive:false,attributionControl:false,fadeDuration:0,
+        canvasContextAttributes:{alpha:true,preserveDrawingBuffer:true,antialias:true}});
+    } catch(e){cancelRender(e as Error);return;}
+    map.current=m;
+    m.on('error',e=>cancelRender(new Error(`MapLibre: ${e.error.message}`)));
+    m.once('load',()=>{m.resize();continueRender(handle);});
+    return()=>{map.current=null;m.remove();};
+  },[]);
+  const cameraKey=JSON.stringify(camera);
+  const regionEvents=events.filter(e=>e.type==='region');
+  const ids=[...new Set(regionEvents.flatMap(e=>e.regions))].sort();
+  const requestKey=JSON.stringify([cameraKey,ids,events.filter(e=>['marker','zone','line'].includes(e.type))]);
+  useEffect(()=>{
+    const m=map.current;if(!m||requestKey===completed.current)return;
+    const handle=delayRender(`Projecting map frame ${frame}`);let settled=false,cancelled=false;
+    const finish=()=>{if(!settled){settled=true;continueRender(handle);}};
+    const project=()=>{
+      if(cancelled)return;
       try {
-        m.getCanvas().style.visibility = 'visible';
-        if (snapshot.current) snapshot.current.style.display = 'none';
-        if (outlineSnapshot.current) outlineSnapshot.current.style.display = 'none';
-        if (pulseLayers.current) pulseLayers.current.replaceChildren();
-        for (const layer of m.getStyle().layers)
-          m.setLayoutProperty(layer.id, 'visibility', 'visible');
-        m.setFilter('highlight-fill', null);
-        m.jumpTo({
-          center: camera.center,
-          zoom: camera.zoom,
-          bearing: camera.bearing,
-          pitch: camera.pitch,
-        });
-
-        const regionSignature = JSON.stringify(regionsNow);
-        if (regionSignature !== geometrySignature.current) {
-          const features = regionsNow.flatMap((e) =>
-            regions.features
-              .filter((f) => e.regions.includes(String(f.id)))
-              .map((f) => ({
-                ...f,
-                id: `${e.id}:${f.id}`,
-                properties: { ...f.properties, color: e.color, eventId: e.id,
-                  strokeColor: e.strokeColor ?? e.color, strokeWidth: e.strokeWidth,
-                  strokeOpacity: e.strokeOpacity },
-              })),
-          );
-          (m.getSource('highlights') as GeoJSONSource).setData({
-            type: 'FeatureCollection',
-            features,
-          });
-          geometrySignature.current = regionSignature;
+        if(capturedCamera.current!==cameraKey){
+          const canvas=snapshot.current!;canvas.width=m.getCanvas().width;canvas.height=m.getCanvas().height;
+          canvas.getContext('2d')!.drawImage(m.getCanvas(),0,0);
+          capturedCamera.current=cameraKey;paths.current.clear();
         }
-        // Frame-based opacity changes do not retile the unchanged geographic polygons.
-        const opacity: unknown[] = ['match', ['get', 'eventId']];
-        for (const event of regionsNow)
-          opacity.push(
-            event.id,
-            event.pulse
-              ? moving
-                ? event.fillOpacity * (0.45 + 0.55 * (0.5 + 0.5 * Math.cos(((frame - event.start) / 60) * Math.PI * 2.6)))
-                : 0
-              : event.fillOpacity,
-          );
-        opacity.push(0.36);
-        m.setPaintProperty(
-          'highlight-fill',
-          'fill-opacity',
-          regionsNow.length ? (opacity as maplibregl.ExpressionSpecification) : 0.36,
-        );
-        // Static pulse fills are composited below a separate outline snapshot.
-        m.setLayoutProperty('highlight-line', 'visibility', moving ? 'visible' : 'none');
-        m.once('idle', () => {
-          document.fonts.ready
-            .then(async () => {
-              if (markers.current) {
-                for (const element of markers.current.querySelectorAll<HTMLElement>('[data-lng]')) {
-                  const p = m.project([Number(element.dataset.lng), Number(element.dataset.lat)]);
-                  element.style.left = `${p.x}px`;
-                  element.style.top = `${p.y}px`;
-                }
-                for (const element of markers.current.querySelectorAll<SVGElement>(
-                  '[data-geometry]',
-                )) {
-                  const points = JSON.parse(element.dataset.geometry!) as [number, number][];
-                  element.setAttribute(
-                    'points',
-                    points
-                      .map((point) => {
-                        const p = m.project(point);
-                        return `${p.x},${p.y}`;
-                      })
-                      .join(' '),
-                  );
-                }
-                arrangeLabels(markers.current);
-              }
-              if (!moving && snapshot.current) {
-                const image = snapshot.current;
-                image.width = m.getCanvas().width;
-                image.height = m.getCanvas().height;
-                image.getContext('2d')!.drawImage(m.getCanvas(), 0, 0);
-                for (const event of regionsNow.filter((e) => e.pulse && e.fillOpacity > 0)) {
-                  for (const layer of m.getStyle().layers)
-                    m.setLayoutProperty(
-                      layer.id,
-                      'visibility',
-                      layer.id === 'highlight-fill' ? 'visible' : 'none',
-                    );
-                  m.setFilter('highlight-fill', ['==', ['get', 'eventId'], event.id]);
-                  m.setPaintProperty('highlight-fill', 'fill-opacity', 1);
-                  await new Promise<void>((resolve) => {
-                    m.once('idle', () => resolve());
-                    m.triggerRepaint();
-                  });
-                  const layer = document.createElement('canvas');
-                  layer.width = m.getCanvas().width;
-                  layer.height = m.getCanvas().height;
-                  layer.getContext('2d')!.drawImage(m.getCanvas(), 0, 0);
-                  layer.dataset.start = String(event.start);
-                  layer.dataset.opacity = String(event.fillOpacity);
-                  Object.assign(layer.style, {
-                    position: 'absolute',
-                    inset: '0',
-                    width: '100%',
-                    height: '100%',
-                    opacity: String(
-                      event.fillOpacity * (0.45 + 0.55 * (0.5 + 0.5 * Math.cos(((frame - event.start) / 60) * Math.PI * 2.6))),
-                    ),
-                  });
-                  pulseLayers.current!.append(layer);
-                }
-                for (const layer of m.getStyle().layers)
-                  m.setLayoutProperty(layer.id, 'visibility', layer.id === 'highlight-line' ? 'visible' : 'none');
-                await new Promise<void>((resolve) => {
-                  m.once('idle', () => resolve());
-                  m.triggerRepaint();
-                });
-                const outlines = outlineSnapshot.current!;
-                outlines.width = m.getCanvas().width;
-                outlines.height = m.getCanvas().height;
-                outlines.getContext('2d')!.drawImage(m.getCanvas(), 0, 0);
-                outlines.style.display = 'block';
-                image.style.display = 'block';
-                m.getCanvas().style.visibility = 'hidden';
-              }
-              completedSignature.current = signature;
-              continueRender(handle);
-            })
-            .catch(cancelRender);
-        });
-        m.triggerRepaint();
-      } catch (e) {
-        cancelRender(e as Error);
-      }
+        for(const id of ids)if(!paths.current.has(id)){
+          const f=regions.features.find(f=>String(f.id)===id)!;
+          const polygons=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;
+          paths.current.set(id,polygons.flatMap(poly=>poly.map(ring=>ring.map((coord,i)=>{
+            const p=m.project([coord[0],coord[1]]);return `${i?'L':'M'}${p.x.toFixed(2)},${p.y.toFixed(2)}`;
+          }).join('')+'Z')).join(''));
+        }
+        if(markers.current){
+          for(const el of markers.current.querySelectorAll<HTMLElement>('[data-lng]')){
+            const p=m.project([Number(el.dataset.lng),Number(el.dataset.lat)]);el.style.left=`${p.x}px`;el.style.top=`${p.y}px`;
+          }
+          for(const el of markers.current.querySelectorAll<SVGElement>('[data-geometry]')){
+            const coords=JSON.parse(el.dataset.geometry!) as [number,number][];
+            el.setAttribute('points',coords.map(c=>{const p=m.project(c);return `${p.x},${p.y}`;}).join(' '));
+          }
+          arrangeLabels(markers.current);
+        }
+        completed.current=requestKey;pending.current=finish;setRevision(n=>n+1);
+      }catch(e){finish();cancelRender(e as Error);}
     };
-    if (m.isStyleLoaded()) update();
-    else m.once('load', update);
-    return () => {
-      m.off('load', update);
+    const update=()=>{
+      if(capturedCamera.current===cameraKey){project();return;}
+      m.once('idle',project);m.jumpTo(camera);m.triggerRepaint();
     };
-  }, [
-    camera.center[0],
-    camera.center[1],
-    camera.zoom,
-    camera.bearing,
-    camera.pitch,
-    moving,
-    events,
-    frame,
-  ]);
-  useEffect(() => {
-    for (const image of pulseLayers.current?.querySelectorAll<HTMLCanvasElement>('canvas') ?? [])
-      image.style.opacity = String(
-        Number(image.dataset.opacity) * (0.45 + 0.55 * (0.5 + 0.5 * Math.cos(((frame - Number(image.dataset.start)) / 60) * Math.PI * 2.6))),
-      );
-  }, [frame]);
-  return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-      <style>{'.maplibregl-canvas {position:absolute;left:0;top:0;}'}</style>
-      <div ref={container} style={{ position: 'absolute', inset: 0 }} />
-      <canvas
-        ref={snapshot}
-        aria-hidden="true"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'none' }}
-      />
-      <div ref={pulseLayers} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
-      <canvas ref={outlineSnapshot} aria-hidden="true"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'none' }} />
+    if(m.isStyleLoaded())update();else m.once('load',update);
+    return()=>{cancelled=true;m.off('load',update);m.off('idle',project);finish();};
+  },[requestKey]);
+  return <div style={{position:'absolute',inset:0,overflow:'hidden'}}>
+    <style>{'.maplibregl-canvas {position:absolute;left:0;top:0;}'}</style>
+    <div ref={container} style={{position:'absolute',inset:0,opacity:0,pointerEvents:'none'}}/>
+    <canvas ref={snapshot} aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>
+    <svg width="100%" height="100%" style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+      <g>{regionEvents.map(e=>e.regions.map(id=><path key={`${e.id}-${id}`} d={paths.current.get(id)} fill={e.color} fillRule="evenodd" opacity={e.fillOpacity*regionOpacity(e,frame)}/>))}</g>
+      <g fill="none" strokeLinejoin="round">{regionEvents.map(e=>e.regions.map(id=><path key={`${e.id}-${id}`} d={paths.current.get(id)} stroke={e.strokeColor??e.color} strokeWidth={e.strokeWidth} opacity={e.strokeOpacity*regionOpacity(e,frame,false)}/>))}</g>
+    </svg>
       <div ref={markers} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
           {events.map((e) => {
@@ -486,6 +301,5 @@ export function BroadcastMap({
             );
           })}
       </div>
-    </div>
-  );
+    </div>;
 }

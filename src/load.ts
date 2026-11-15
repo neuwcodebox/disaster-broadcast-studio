@@ -92,7 +92,9 @@ export async function loadScenario(file: string): Promise<Loaded> {
     for (let i = 0; i < alerts.length; i++) {
       const a = alerts[i];
       if (a.type !== 'alert') continue;
-      const next = alerts[i + 1]?.start ?? timeline.durationInFrames;
+      const nextAlert=alerts[i+1];
+      if(nextAlert?.type==='alert'&&nextAlert.text===a.text&&nextAlert.sender===a.sender&&nextAlert.level===a.level&&nextAlert.corrects===a.corrects)continue;
+      const next = nextAlert?.start ?? timeline.durationInFrames;
       if (
         next - Math.max(a.start, 180) <
         pages(alertText(scenario.agencies[a.sender], a.text)).length * a.pageSeconds * FPS

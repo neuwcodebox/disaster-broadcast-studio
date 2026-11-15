@@ -122,7 +122,12 @@ export function Broadcast(props: BroadcastProps) {
               fontFamily: numberFont,
               fontVariantNumeric: 'tabular-nums',
               color: state.jumping ? '#eef2f4' : '#bdc7ce',
-              borderBottom: state.jumping ? '1px solid #bdc7ce' : '1px solid transparent',
+              borderBottom: state.jumping ? '2px solid #d4e0e7' : '2px solid transparent',
+              background: state.jumping ? '#202b32' : 'transparent',
+              boxShadow: state.jumping ? '0 0 16px #b8d6e333' : 'none',
+              textShadow: state.jumping ? '0 0 8px #d9e9f280' : 'none',
+              padding: '2px 8px',
+              fontWeight: state.jumping ? 600 : 400,
               letterSpacing: 0.5,
             }}
           >

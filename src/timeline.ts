@@ -17,9 +17,14 @@ export function receiptHighlights(t:Timeline,frame:number):CompiledEvent[]{
   const end=Math.min(t.durationInFrames,e.start+Math.round(e.mapHighlight.duration*FPS));
   if(frame<e.start||frame>=end)return [];
   return [{id:`receipt-${e.id}`,type:'region' as const,cut:e.cut,at:e.at,duration:e.mapHighlight.duration,carry:true,
-   start:e.start,end,order:e.order,regions:e.regions,color:e.mapHighlight.color,fillOpacity:.55,
-   strokeColor:e.mapHighlight.color,strokeOpacity:.85,strokeWidth:2,pulse:true}];
+   start:e.start,end,order:e.order,regions:e.regions,color:e.mapHighlight.color,fillOpacity:.28,
+   strokeColor:e.mapHighlight.color,strokeOpacity:0,strokeWidth:0,pulse:false,
+   fadeIn:Math.min(.2,e.mapHighlight.duration*.2),fadeOut:Math.min(.7,e.mapHighlight.duration*.4)}];
  });
+}
+export function regionOpacity(e:Extract<CompiledEvent,{type:'region'}>,frame:number,fill=true){
+ const fade=envelope(frame,e.start,e.end,e.fadeIn,e.fadeOut);
+ return fade * (fill && e.pulse ? .88 + .12 * Math.cos((frame-e.start)/FPS*Math.PI*.9) : 1);
 }
 export function statusEntry(frame:number,start:number,duration=.55){
  const p=Math.max(0,Math.min(1,(frame-start)/(duration*FPS)));
@@ -40,10 +45,12 @@ export function stateAt(t:Timeline,frame:number){
  const previous=index>0?t.cuts[index-1]:null;
  const epoch=cut.epoch+(frame-cut.start)*1000/FPS;
  const p=jumping?(frame-cut.start)/transition:1;
- const displayEpoch=jumping?mix(previous!.epoch+(previous!.end-previous!.start)*1000/FPS,cut.epoch+transition*1000/FPS,p*p*(3-2*p)):epoch;
+ const clockPhase=jumping?(p<.15?'lead':p<.75?'run':'hold'):null;
+ const roll=Math.max(0,Math.min(1,(p-.15)/.6));
+ const displayEpoch=jumping?mix(previous!.epoch+(previous!.end-previous!.start)*1000/FPS,cut.epoch+transition*1000/FPS,roll):epoch;
  const visible=t.events.filter(e=>active(e,contentFrame));
  return {
-  cut,frame,epoch,displayEpoch,jumping,contentFrame,camera:cameraAt(t,contentFrame),
+  cut,frame,epoch,displayEpoch,jumping,clockPhase,contentFrame,camera:cameraAt(t,contentFrame),
   alerts:t.events.filter(e=>e.type==='alert'&&e.start<=contentFrame).reverse(),
   visible,
   news:visible.find(e=>e.type==='news'),

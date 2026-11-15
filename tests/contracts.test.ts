@@ -257,3 +257,14 @@ test('overlapping map categories keep independent fill, outline and timed legend
  assert.equal(scenario.events[1].type==='region'&&scenario.events[1].fillOpacity,0);
  assert.throws(()=>scenarioSchema.parse({...raw,events:[{...scenario.events[0],fillOpacity:1.1}]}));
 });
+
+test('rapid identical messages do not repeat reading warnings; changed content still does',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'dbs-repeat-'));
+ try {
+  const x:any=input();x.events=[0,.25,.5].map((offset,i)=>({id:`repeat${i}`,type:'alert',cut:'first',at:2+offset,sender:'city',text:'반복 안내',regions:[]}));
+  const file=path.join(root,'scenario.json');await writeFile(file,JSON.stringify(x));
+  assert.deepEqual((await loadScenario(file)).warnings,[]);
+  x.events[1].text='새로운 안내';await writeFile(file,JSON.stringify(x));
+  assert.ok((await loadScenario(file)).warnings.some(w=>w.includes('repeat0')));
+ }finally{await rm(root,{recursive:true,force:true});}
+});

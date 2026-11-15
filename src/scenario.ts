@@ -94,6 +94,8 @@ const highlight = z
     strokeOpacity: z.number().min(0).max(1).default(1),
     strokeWidth: z.number().nonnegative().default(2),
     label: z.string().max(80).optional(),
+    fadeIn: seconds.default(0),
+    fadeOut: seconds.default(0),
     pulse: z.boolean().default(false),
   })
   .strict();
