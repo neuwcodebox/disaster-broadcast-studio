@@ -17,8 +17,24 @@ const timeline = compile(
       { id: 'second', duration: 40, storyTime: '2026-01-01T14:00:00+09:00' },
     ],
     events: [
-      { id: 'old', type: 'alert', cut: 'first', at: 0, sender: 'city', text: '이전 문자' },
-      { id: 'new', type: 'alert', cut: 'first', at: 4, sender: 'city', text: '새 문자' },
+      {
+        id: 'old',
+        type: 'alert',
+        cut: 'first',
+        at: 0,
+        sender: 'city',
+        level: '긴급재난',
+        text: '이전 문자',
+      },
+      {
+        id: 'new',
+        type: 'alert',
+        cut: 'first',
+        at: 4,
+        sender: 'city',
+        level: '위급재난',
+        text: '새 문자',
+      },
       { id: 'same1', type: 'alert', cut: 'first', at: 6, sender: 'city', text: '동시 문자 하나' },
       { id: 'same2', type: 'alert', cut: 'first', at: 6, sender: 'city', text: '동시 문자 둘' },
       {
@@ -55,4 +71,19 @@ test('simultaneous arrivals use reverse scenario order and do not cycle with ela
 test('a cut time jump and older publication time preserve receive order and arbitrary seeking', () => {
   assert.deepEqual(orderAt(2400), ['jump', 'same2', 'same1', 'new', 'old']);
   assert.deepEqual(orderAt(360), ['same2', 'same1', 'new', 'old']);
+});
+test('older messages retain their distinct severity badge and border colors', () => {
+  const markup = renderToStaticMarkup(React.createElement(AlertHistory, { timeline, frame: 1800 }));
+  const cards = markup.match(/<article\b[\s\S]*?<\/article>/g)!;
+  for (const [text, color] of [
+    ['이전 문자', '#c2746e'],
+    ['새 문자', '#dd655f'],
+    ['동시 문자 하나', '#a0adb5'],
+  ]) {
+    const card = cards.find((html) => html.includes(text))!;
+    assert.ok(card);
+    assert.ok(card.includes(`border-left:2px solid ${color}`));
+    assert.ok(card.includes(`border:1px solid ${color}`));
+    assert.ok(card.includes(`color:${color}`));
+  }
 });

@@ -42,7 +42,7 @@ function AlertCard({
               .padStart(2, '0')}`,
             borderBottom: '1px solid #343a3f',
             background: latest ? '#131719' : '#0e1214',
-            borderLeft: `2px solid ${latest ? colors[event.level] : '#434b51'}`,
+            borderLeft: `2px solid ${colors[event.level]}`,
           }}
         >
           <div
@@ -51,13 +51,13 @@ function AlertCard({
               alignItems: 'center',
               gap: 10,
               fontSize: 17,
-              color: latest ? colors[event.level] : '#8c979e',
+              color: colors[event.level],
               marginBottom: 12,
             }}
           >
             <b
               style={{
-                border: `1px solid ${latest ? colors[event.level] : '#4b565d'}`,
+                border: `1px solid ${colors[event.level]}`,
                 padding: '2px 7px',
                 fontWeight: 400,
               }}

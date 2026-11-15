@@ -16,6 +16,25 @@ test('receipt targets authored geometry once, supports opt-out and deterministic
  assert.deepEqual(receiptHighlights(t,675),[]);
  assert.deepEqual(receiptHighlights(t,130),receiptHighlights(t,130));
 });
+test('receipt fill visibly pulses three times while outlines remain unchanged',()=>{
+ const t=make();
+ const alpha=(frame:number)=>{
+  const cue=receiptHighlights(t,frame)[0];
+  if(!cue)return 0;
+  assert.equal(cue.strokeWidth,0);assert.equal(cue.strokeOpacity,0);
+  return cue.fillOpacity*regionOpacity(cue,frame);
+ };
+ for(const frame of [144,192,240])assert.ok(Math.abs(alpha(frame)-.28)<1e-9);
+ for(const frame of [120,168,216,264])assert.ok(alpha(frame)<1e-9);
+ const raw=structuredClone(t.scenario);const e=raw.events[0];if(e.type!=='alert')throw Error();
+ e.mapHighlight={duration:3,color:'#abcdef'};
+ const custom=compile(scenarioSchema.parse(raw),new Set(['51']));
+ for(const frame of [150,210,270]){
+  const cue=receiptHighlights(custom,frame)[0];assert.equal(cue.color,'#abcdef');
+  assert.ok(Math.abs(cue.fillOpacity*regionOpacity(cue,frame)-.28)<1e-9);
+ }
+ assert.deepEqual(receiptHighlights(custom,300),[]);
+});
 test('clock traverses skipped time while old content holds, then real-time flow resumes',()=>{
  const t=make();const a=stateAt(t,600),mid=stateAt(t,630),end=stateAt(t,660);
  assert.equal(a.contentFrame,599);assert.equal(a.jumping,true);

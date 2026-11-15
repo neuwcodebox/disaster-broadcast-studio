@@ -79,6 +79,23 @@ test('status replacement preserves one copy of unchanged items and removes retir
   assert.doesNotMatch(markup(Status, 180 + changeFrames), /이전 상태/);
   assert.doesNotMatch(markup(Status, 300 + changeFrames), /새 상태|유지 항목/);
 });
+test('changed status blinks three times after entry, while retained status stays fully visible', () => {
+  const raw = structuredClone(timeline.scenario);
+  const event = raw.events.find((e) => e.id === 's2')!;
+  if (event.type !== 'status') throw Error();
+  event.duration = 4;
+  const longer = compile(scenarioSchema.parse(raw), new Set());
+  const opacity = (frame: number, text: string) => {
+    const html = renderToStaticMarkup(React.createElement(Status, { timeline: longer, frame }));
+    const style = html.match(new RegExp(`<span[^>]*style="([^"]*)"[^>]*>${text}`))![1];
+    return Number(style.match(/(?:^|;)opacity:([^;]+)/)![1]);
+  };
+  for (const frame of [225, 261, 297]) {
+    assert.ok(Math.abs(opacity(frame, '새 상태') - 0.4) < 1e-9);
+    assert.equal(opacity(frame, '유지 항목'), 1);
+  }
+  for (const frame of [207, 243, 279, 315, 360]) assert.equal(opacity(frame, '새 상태'), 1);
+});
 test('page changes retain both pages only during the transition, including wraparound', () => {
   const page = (frame: number) =>
     renderToStaticMarkup(

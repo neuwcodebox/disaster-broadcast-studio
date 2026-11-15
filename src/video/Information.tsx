@@ -1,8 +1,8 @@
 import React from 'react';
-import type { Timeline } from '../scenario.js';
-import { clock, stateAt } from '../timeline.js';
+import { FPS, type Timeline } from '../scenario.js';
+import { clock, notificationPulse, stateAt } from '../timeline.js';
 import { numberFont } from './fonts.js';
-import { changeProgress, pageAt, transitionAt } from './transitions.js';
+import { changeFrames, changeProgress, pageAt, transitionAt } from './transitions.js';
 
 export function PagedText({
   chunks,
@@ -121,6 +121,7 @@ export function News({ timeline, frame }: { timeline: Timeline; frame: number })
 
 export function Status({ timeline, frame }: { timeline: Timeline; frame: number }) {
   const { current, previous, progress, start } = transitionAt(timeline.events, 'status', frame);
+  const pulse = notificationPulse(frame, start + changeFrames, start + changeFrames + 1.8 * FPS);
   // Compare authored values, so unchanged badges do not animate on event replacement.
   const before = timeline.events.find((e) => e.type === 'status' && e.end === current?.start);
   const oldItems = before?.type === 'status' ? before.items : [];
@@ -157,7 +158,8 @@ export function Status({ timeline, frame }: { timeline: Timeline; frame: number 
                         position: 'relative',
                         display: 'block',
                         marginRight: 14,
-                        opacity: layer === 0 ? 1 - progress : changed ? progress : 1,
+                        opacity:
+                          layer === 0 ? 1 - progress : changed ? progress * (1 - 0.6 * pulse) : 1,
                         transform: `translateY(${layer === 0 ? -24 * progress : changed ? 24 * (1 - progress) : 0}px)`,
                         border: `1px solid ${badge.color}`,
                         color: badge.color,
@@ -166,7 +168,9 @@ export function Status({ timeline, frame }: { timeline: Timeline; frame: number 
                         lineHeight: 1.3,
                         whiteSpace: 'nowrap',
                         background: `${badge.color}${Math.round(
-                          (layer === 1 && changed ? 1 - changeProgress(frame, start, 66) : 0) * 96,
+                          (layer === 1 && changed
+                            ? Math.max(1 - changeProgress(frame, start, 66), pulse)
+                            : 0) * 96,
                         )
                           .toString(16)
                           .padStart(2, '0')}`,
@@ -184,7 +188,7 @@ export function Status({ timeline, frame }: { timeline: Timeline; frame: number 
                             background: badge.color,
                             transformOrigin: 'left',
                             transform: `scaleX(${progress})`,
-                            opacity: 1 - changeProgress(frame, start, 66),
+                            opacity: Math.max(1 - changeProgress(frame, start, 66), pulse),
                           }}
                         />
                       )}

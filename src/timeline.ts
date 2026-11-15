@@ -1,6 +1,11 @@
 import { FPS, type Timeline, type Camera, type CompiledEvent } from './scenario.js';
 export const active = (e: CompiledEvent, frame: number) => e.start <= frame && frame < e.end;
 export const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+// Three smooth pulses, bounded by the authored frame interval.
+export function notificationPulse(frame: number, start: number, end: number) {
+  if (frame < start || frame >= end) return 0;
+  return Math.sin(((frame - start) / (end - start)) * Math.PI * 3) ** 2;
+}
 export function cameraAt(t: Timeline, frame: number): Camera {
   let cam = { ...t.scenario.map.camera };
   for (const e of t.events) {
@@ -22,7 +27,8 @@ export function receiptHighlights(
 ): Extract<CompiledEvent, { type: 'region' }>[] {
   return t.events.flatMap((e) => {
     if (e.type !== 'alert' || !e.mapHighlight || !e.regions.length) return [];
-    const end = Math.min(t.durationInFrames, e.start + Math.round(e.mapHighlight.duration * FPS));
+    const highlightEnd = e.start + Math.round(e.mapHighlight.duration * FPS);
+    const end = Math.min(t.durationInFrames, highlightEnd);
     if (frame < e.start || frame >= end) return [];
     return [
       {
@@ -37,13 +43,13 @@ export function receiptHighlights(
         order: e.order,
         regions: e.regions,
         color: e.mapHighlight.color,
-        fillOpacity: 0.28,
+        fillOpacity: 0.28 * notificationPulse(frame, e.start, highlightEnd),
         strokeColor: e.mapHighlight.color,
         strokeOpacity: 0,
         strokeWidth: 0,
         pulse: false,
-        fadeIn: Math.min(0.2, e.mapHighlight.duration * 0.2),
-        fadeOut: Math.min(0.7, e.mapHighlight.duration * 0.4),
+        fadeIn: Math.min(0.1, e.mapHighlight.duration / 12),
+        fadeOut: Math.min(0.1, e.mapHighlight.duration / 12),
       },
     ];
   });
