@@ -18,3 +18,9 @@
 - 공개 레지스트리의 `0.1.0` 무결성 값이 최종 tgz와 일치했다: `sha512-9Hmr+PeraBXl6Z5fraXZJ851mbETgNUiJZObnV50kFJONF+hDMLUDT8B89UqpY928ClveKeS6t9F9miyDn+lyw==`.
 - 새 설치 폴더에서 공개 레지스트리의 `disaster-broadcast-studio@0.1.0`을 설치했다. `dbs --version`이 `0.1.0`을 반환했고, `dbs init`으로 만든 30초 작품이 `dbs validate`에서 경고 없이 통과했다.
 - 기본 설치 경로를 npm으로 정리했으며, 이후 버전은 동일한 이름·버전 조합을 재사용하지 않고 새 버전으로 게시한다.
+
+## README 이미지 배포 보정: 0.1.1
+
+비공개 GitHub 저장소의 `raw.githubusercontent.com` 이미지 주소는 인증 없는 요청에 404를 반환해 GitHub와 npm의 README 미리보기에서 표시되지 않았다. 기술 검증 스크린샷을 `assets/preview.png`로 옮겨 npm 패키지에 동봉하고, README는 `https://cdn.jsdelivr.net/npm/disaster-broadcast-studio@0.1.1/assets/preview.png`를 사용하도록 수정했다. 기존 개발 이력의 스크린샷 링크도 새 경로로 연결했다. 저장소 공개 설정은 변경하지 않았다.
+
+`0.1.1`의 빌드·타입 검사·게시 예행연습을 통과했으며 이미지가 실제 tgz에 포함되는지 확인했다. 사용자 npm 인증 후 공개 반영을 기다려 `latest: 0.1.1`과 배포물 무결성·README 주소를 검증했다. 정확한 CDN 이미지 URL은 인증 없이 HTTP 200과 `image/png`를 반환했고, 내려받은 358,290바이트 PNG가 원본과 일치했다. 소스 기준 커밋은 `52f8514`다.
