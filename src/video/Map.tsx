@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapInstance, StyleSpecification } from 'maplibre-gl';
-import { useDelayRender, cancelRender, staticFile } from 'remotion';
+import { useBufferState, useDelayRender, useRemotionEnvironment, staticFile } from 'remotion';
 import type { FeatureCollection } from 'geojson';
 import { FPS, type Camera, type CompiledEvent } from '../scenario.js';
 import type { Regions } from '../load.js';
@@ -105,23 +105,26 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
   const container=useRef<HTMLDivElement>(null),map=useRef<MapInstance|null>(null);
   const snapshot=useRef<HTMLCanvasElement>(null),markers=useRef<HTMLDivElement>(null);
   const paths=useRef(new Map<string,string>()),capturedCamera=useRef(''),completed=useRef('');
-  const {delayRender,continueRender}=useDelayRender();
+  const {delayRender,continueRender,cancelRender}=useDelayRender();
+  const buffer = useBufferState();
+  const { isRendering } = useRemotionEnvironment();
   const pending=useRef<(()=>void)|null>(null);
   const [revision,setRevision]=useState(0);
   useLayoutEffect(()=>{pending.current?.();pending.current=null;},[revision]);
   useEffect(()=>{
     const handle=delayRender('Initializing offline map');
+    const playback = buffer.delayPlayback();
     maplibregl.setWorkerUrl(staticFile('maplibre-gl-worker.mjs'));
     let m:MapInstance;
     try {
       m=new maplibregl.Map({container:container.current!,style:style(countries,regions,provinces),
         ...camera,interactive:false,attributionControl:false,fadeDuration:0,
-        canvasContextAttributes:{alpha:true,preserveDrawingBuffer:true,antialias:true}});
-    } catch(e){cancelRender(e as Error);return;}
+        canvasContextAttributes:{alpha:true,preserveDrawingBuffer:isRendering,antialias:true}});
+    } catch(e){playback.unblock();continueRender(handle);cancelRender(e as Error);return;}
     map.current=m;
     m.on('error',e=>cancelRender(new Error(`MapLibre: ${e.error.message}`)));
-    m.once('load',()=>{m.resize();continueRender(handle);});
-    return()=>{map.current=null;m.remove();};
+    m.once('load',()=>{m.resize();continueRender(handle);playback.unblock();});
+    return()=>{playback.unblock();continueRender(handle);map.current=null;m.remove();};
   },[]);
   const cameraKey=JSON.stringify(camera);
   const regionEvents=events.filter(e=>e.type==='region');
@@ -130,13 +133,16 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
   useEffect(()=>{
     const m=map.current;if(!m||requestKey===completed.current)return;
     const handle=delayRender(`Projecting map frame ${frame}`);let settled=false,cancelled=false;
-    const finish=()=>{if(!settled){settled=true;continueRender(handle);}};
+    const playback = isRendering ? buffer.delayPlayback() : null;
+    const finish=()=>{if(!settled){settled=true;continueRender(handle);playback?.unblock();}};
     const project=()=>{
       if(cancelled)return;
       try {
         if(capturedCamera.current!==cameraKey){
-          const canvas=snapshot.current!;canvas.width=m.getCanvas().width;canvas.height=m.getCanvas().height;
-          canvas.getContext('2d')!.drawImage(m.getCanvas(),0,0);
+          if (isRendering) {
+            const canvas=snapshot.current!;canvas.width=m.getCanvas().width;canvas.height=m.getCanvas().height;
+            canvas.getContext('2d')!.drawImage(m.getCanvas(),0,0);
+          }
           capturedCamera.current=cameraKey;paths.current.clear();
         }
         for(const id of ids)if(!paths.current.has(id)){
@@ -160,6 +166,9 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
       }catch(e){finish();cancelRender(e as Error);}
     };
     const update=()=>{
+      // Playback lets MapLibre paint continuously. Waiting for idle and reading
+      // the WebGL canvas on every moving frame is only needed for file output.
+      if (!isRendering) { m.jumpTo(camera); project(); return; }
       if(capturedCamera.current===cameraKey){project();return;}
       m.once('idle',project);m.jumpTo(camera);m.triggerRepaint();
     };
@@ -168,8 +177,8 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
   },[requestKey]);
   return <div style={{position:'absolute',inset:0,overflow:'hidden'}}>
     <style>{'.maplibregl-canvas {position:absolute;left:0;top:0;}'}</style>
-    <div ref={container} style={{position:'absolute',inset:0,opacity:0,pointerEvents:'none'}}/>
-    <canvas ref={snapshot} aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>
+    <div ref={container} style={{position:'absolute',inset:0,opacity:isRendering?0:1,pointerEvents:'none'}}/>
+    {isRendering && <canvas ref={snapshot} aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>}
     <svg width="100%" height="100%" style={{position:'absolute',inset:0,pointerEvents:'none'}}>
       <g>{regionEvents.map(e=>e.regions.map(id=><path key={`${e.id}-${id}`} d={paths.current.get(id)} fill={e.color} fillRule="evenodd" opacity={e.fillOpacity*regionOpacity(e,frame)}/>))}</g>
       <g fill="none" strokeLinejoin="round">{regionEvents.map(e=>e.regions.map(id=><path key={`${e.id}-${id}`} d={paths.current.get(id)} stroke={e.strokeColor??e.color} strokeWidth={e.strokeWidth} opacity={e.strokeOpacity*regionOpacity(e,frame,false)}/>))}</g>

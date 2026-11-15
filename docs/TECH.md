@@ -11,9 +11,10 @@
 | 시간 상태 | `src/timeline.ts`: 프레임의 컷·시계·누적 문자·활성 연출·카메라 | F2, F4, N2 |
 | 지도 | `src/video/Map.tsx`: MapLibre 로컬 벡터 경계·강조·카메라·보조 지도 | F3, N1, N2 |
 | 방송 | `src/video`: 방송 레이아웃, 문자 이력·방송 안내, 글꼴 로딩, 효과·음향을 컴포넌트·훅으로 분리 | F3, F4, N1 |
-| 출력 | `src/render.ts`: 로컬 자산 준비·번들·동일 composition의 PNG/MP4, `src/output.ts`: 출력·부속 파일 준비·충돌 보호·정리 | F5, N2, N3 |
+| 출력 | `src/video/prepare.ts`: 공통 로컬 자산·방송 props 준비, `src/render.ts`: 번들·동일 composition의 PNG/MP4, `src/output.ts`: 출력·부속 파일 준비·충돌 보호·정리 | F5, N2, N3 |
+| 웹 미리보기 | `src/preview`: 루프백 HTTP 서버·입력 변경 감지·마지막 정상 상태·Remotion Player 재생과 탐색 | F5, N2, N3 |
 | 음원 생성 | `src/audio`: Tone.Offline·Remotion Artifact·PCM16 WAV와 합성 기록 | F4, F5, N2, N3 |
-| CLI | `src/cli.ts`: init/validate/schema/regions/inspect/audio/frame/render/credits/skill | F5, F6, N3 |
+| CLI | `src/cli.ts`: init/validate/schema/regions/inspect/preview/audio/frame/render/credits/skill | F5, F6, N3 |
 | 창작 지원 | `skills/scenario-writing`: 독립 스킬과 정본 참고자료 | F6, N4 |
 
 정확한 작품 필드·명령은 배포물에도 포함하는 [사용 계약](../skills/scenario-writing/references/format.md) 한 곳에서 관리한다. JSON Schema는 코드에서 `dbs schema`로 생성한다. 개발 문서에 같은 필드 목록을 복제하지 않는다.
@@ -43,6 +44,8 @@ MapLibre GL JS를 사용한다. 현재 필요한 면·선·지점·카메라 표
 Node.js 22+, TypeScript, React 19, Remotion 4.0.543, MapLibre 6.18.0, Zod 4, YAML 2를 사용한다. 설치 버전은 `package-lock.json`으로 고정한다. 영상 엔진을 직접 구현하지 않고 [Remotion renderer](https://www.remotion.dev/docs/renderer/render-media)와 [지도 통합 방식](https://www.remotion.dev/docs/maps)을 따른다. 관련 요구: F5, N3.
 
 상태 이벤트는 문구·색상 목록만 받고 특정 경보 체계를 하드코딩하지 않는다. 방송 안내는 지도·문자 영역을 대체하고 시계·상태·뉴스를 유지한다. `inspect`는 같은 프레임 계산 결과를 렌더 없이 반환한다.
+
+`preview`는 `127.0.0.1`에 HTTP 서버를 열고 같은 `Broadcast`를 버전이 일치하는 `@remotion/player`로 재생한다. 기존 Remotion bundler의 브라우저 진입점만 교체해 별도 개발 서버 의존성을 추가하지 않는다. 정적 자산과 방송 props 준비는 이미지·영상 출력과 공유한다. 시나리오 내용과 현재 선언한 사용자 지도·음원의 파일 메타데이터를 주기적으로 비교하고 변경 시 기존 로더로 검증한다. 잘못된 문서·누락 파일은 오류로 표시하며 마지막 정상 props와 자산을 유지한다. 정상 갱신은 Player를 다시 마운트해 지도까지 복원하며 현재 프레임을 새 길이로 제한하고 일시정지한다. 음원 URL은 갱신별로 분리해 브라우저 캐시를 피하고 종료 시 임시 번들과 자산을 정리한다. 준비된 파일만 제공하고 오디오 Range 요청을 지원한다. 동시 음향 수에 맞춰 Player의 공유 오디오 태그를 준비한다. 지도 초기화·글꼴 로딩은 렌더 대기와 Player 버퍼 대기를 함께 사용한다. 웹 재생에서는 MapLibre 캔버스를 직접 표시하고 카메라·SVG 투영을 함께 갱신하며 매 프레임 idle 대기·캔버스 읽기를 피한다. 이미지·영상 출력은 기존의 idle 후 캡처를 유지한다. MP4 인코딩·Headless Chromium 준비는 필요 없고 재생 성능은 브라우저·GPU에 따른다. 관련 요구: F5, N2, N3.
 
 PNG 프레임, 포함 범위 MP4, 전체 MP4가 동일 composition과 props를 사용한다. 기본 영상은 1920×1080 60fps H.264/yuv420p, AAC 트랙을 포함한다. 출력별 `.credits.txt`에 제공자·출처·라이선스·가공 내용을, `.json`에 구조화된 출처와 프레임 범위를 기록한다. 상시 지도 출처 오버레이 대신 게시 설명에 동봉할 문안을 생성한다. 사용자 자산의 추가 조건은 작품별로 확인한다. 영상·음원 출력은 `withOutputFiles`로 목적지와 같은 파일시스템의 임시 디렉터리에 결과와 부속 파일을 준비한다. 모든 필수 파일을 확인한 뒤 부속 파일과 본 결과 순으로 게시하며 임시 디렉터리를 정리한다. 기본 모드는 기존 결과·부속 파일을 검사하고 배타적 하드 링크로 렌더 중 생긴 충돌도 보호한다. `--overwrite`는 파일별 rename으로 교체하며 전체 파일 집합의 일괄 교체를 보장하지 않는다. Chromium 경로와 WebGL 백엔드·동시 렌더 수를 지정할 수 있다. 최초 브라우저 준비를 제외한 렌더는 로컬에서 수행한다. 60fps 재생 규격과 실제 출력 속도는 별개다. 하드웨어가 다른 GPU의 픽셀 단위 일치는 보장하지 않는다. 관련 요구: F4, F5, N2.
 

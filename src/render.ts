@@ -1,15 +1,12 @@
 import { bundle } from '@remotion/bundler';
 import { renderStill, renderMedia, selectComposition } from '@remotion/renderer';
-import { mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Loaded } from './load.js';
 import { withOutputFiles } from './output.js';
-import type { BroadcastProps } from './video/Broadcast.js';
-import { fonts } from './video/fonts.js';
+import { prepareStaticAssets, prepareBroadcast } from './video/prepare.js';
 import { readBundledJson, packageRoot } from './assets.js';
 import { makeCredits, type Credit } from './credits.js';
-import type { FeatureCollection } from 'geojson';
 export type RenderOptions = {
   out: string;
   frame?: number;
@@ -20,7 +17,6 @@ export type RenderOptions = {
   concurrency: number;
   overwrite?: boolean;
 };
-const require = createRequire(import.meta.url);
 export async function render(loaded: Loaded, options: RenderOptions) {
   const out = path.resolve(options.out),
     last = loaded.timeline.durationInFrames - 1;
@@ -43,42 +39,8 @@ export async function render(loaded: Loaded, options: RenderOptions) {
     { overwrite: options.overwrite, sidecars: ['.json', '.credits.txt'] },
     async (pending, temp) => {
       const publicDir = path.join(temp, 'public');
-      await mkdir(path.join(publicDir, 'fonts', 'files'), { recursive: true });
-      for (const name of ['maplibre-gl-worker.mjs', 'maplibre-gl-shared.mjs'])
-        await copyFile(require.resolve(`maplibre-gl/dist/${name}`), path.join(publicDir, name));
-      for (const font of fonts) {
-        const fontRoot = path.dirname(require.resolve(`${font.package}/package.json`));
-        for (const weight of font.weights) {
-          const css = await readFile(path.join(fontRoot, `${weight}.css`), 'utf8');
-          await writeFile(path.join(publicDir, 'fonts', `${font.id}-${weight}.css`), css);
-          for (const match of css.matchAll(/url\(([^)]+)\)/g)) {
-            const relative = match[1].replace(/['"]/g, '');
-            await copyFile(path.join(fontRoot, relative), path.join(publicDir, 'fonts', relative));
-          }
-        }
-      }
-      const audio: Record<string, string> = {};
-      for (const [id, file] of Object.entries(loaded.assetPaths)) {
-        const name = `audio/${id}${path.extname(file)}`;
-        await mkdir(path.join(publicDir, 'audio'), { recursive: true });
-        await copyFile(file, path.join(publicDir, name));
-        audio[id] = name;
-      }
-      const countries = await readBundledJson<FeatureCollection>('countries.geojson.gz');
-      const defaultRegions = !loaded.timeline.scenario.map.regions;
-      // The full SGIS polygons supply the Korean coastline and administrative fills.
-      if (defaultRegions)
-        countries.features = countries.features.filter((f) => f.properties?.code !== 'KOR');
-      const provinces = defaultRegions
-        ? await readBundledJson<FeatureCollection>('provinces.geojson.gz')
-        : { type: 'FeatureCollection' as const, features: [] };
-      const inputProps: BroadcastProps = {
-        timeline: loaded.timeline,
-        regions: loaded.regions,
-        countries,
-        provinces,
-        audio,
-      };
+      await prepareStaticAssets(publicDir);
+      const inputProps = await prepareBroadcast(loaded, publicDir);
       const serveUrl = await bundle({
         entryPoint: path.join(packageRoot, 'dist/video/index.js'),
         publicDir,

@@ -4,10 +4,13 @@
 
 ```sh
 npx dbs validate scenario.yaml
+npx dbs preview scenario.yaml
 npx dbs regions --search 철원
 npx dbs frame scenario.yaml --frame 600 --out preview.png
 npx dbs render scenario.yaml --out film.mp4
 ```
+
+`preview`의 로컬 주소를 브라우저에서 열면 영상 출력 없이 화면·음향을 재생하고 프레임·컷을 탐색할 수 있다. 시나리오·지도·음원 저장 시 현재 위치에서 일시정지해 반영하며, 오류가 있으면 마지막 정상 화면을 유지한다. 종료는 터미널에서 Ctrl+C다.
 
 문자 도착 시 엔진의 공통 수신음이 재생된다. `alert.sound: false`로 끄거나 사용자 음원으로 바꾼다. `audio/`는 작품 고유 음원, `audio-code/`는 필요한 합성 코드를 두는 폴더다. [음향 가이드](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/scenario-writing/references/audio.md)를 참고한다.
 

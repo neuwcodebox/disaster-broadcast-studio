@@ -89,6 +89,24 @@ program
     );
   });
 program
+  .command('preview <scenario>')
+  .description('Preview in a local browser with playback, seeking and automatic file updates')
+  .option('--port <number>', 'Local HTTP port; 0 selects an available port', '3000')
+  .action(async (file, opts) => {
+    const { startPreview } = await import('./preview/server.js');
+    console.error('Preparing browser preview…');
+    const preview = await startPreview(file, { port: Number(opts.port) });
+    console.log(`Preview: ${preview.url}\nOpen this URL in your browser. Press Ctrl+C to stop.`);
+    const stop = () => {
+      void preview.close().then(() => {
+        process.off('SIGINT', stop);
+        process.off('SIGTERM', stop);
+      }).catch(error => { console.error(error); process.exitCode = 1; });
+    };
+    process.on('SIGINT', stop);
+    process.on('SIGTERM', stop);
+  });
+program
   .command('credits <scenario>')
   .description('Prepare source credits for the video description')
   .option('-o, --out <path>')

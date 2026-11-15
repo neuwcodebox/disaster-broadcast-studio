@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { staticFile, useDelayRender, cancelRender } from 'remotion';
+import { staticFile, useBufferState, useDelayRender } from 'remotion';
 import { fonts } from './fonts.js';
 
 export function useBundledFonts(text: string) {
-  const { delayRender, continueRender } = useDelayRender();
+  const { delayRender, continueRender, cancelRender } = useDelayRender();
+  const buffer = useBufferState();
   const [fontHandle] = useState(() => delayRender('Loading bundled Korean font'));
   useEffect(() => {
+    const playback = buffer.delayPlayback();
+    let cancelled = false;
     const links = fonts.flatMap((font) =>
       font.weights.map((weight) => {
         const link = document.createElement('link');
@@ -39,8 +42,8 @@ export function useBundledFonts(text: string) {
         ),
       )
       .then(() => document.fonts.ready)
-      .then(() => continueRender(fontHandle))
-      .catch(cancelRender);
-    return () => links.forEach((link) => link.remove());
-  }, [text, fontHandle, delayRender, continueRender]);
+      .then(() => { if (!cancelled) { continueRender(fontHandle); playback.unblock(); } })
+      .catch(error => { if (!cancelled) { playback.unblock(); cancelRender(error); } });
+    return () => { cancelled = true; playback.unblock(); continueRender(fontHandle); links.forEach((link) => link.remove()); };
+  }, [text, fontHandle, buffer, delayRender, continueRender, cancelRender]);
 }

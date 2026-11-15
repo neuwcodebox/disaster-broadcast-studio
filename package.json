@@ -27,6 +27,7 @@
     "@fontsource/ibm-plex-mono": "5.3.0",
     "@fontsource/ibm-plex-sans-kr": "5.3.0",
     "@remotion/bundler": "4.0.543",
+    "@remotion/player": "4.0.543",
     "@remotion/renderer": "4.0.543",
     "commander": "^14.0.0",
     "maplibre-gl": "6.18.0",
