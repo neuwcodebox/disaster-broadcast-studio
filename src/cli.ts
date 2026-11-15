@@ -11,7 +11,7 @@ import { z } from 'zod';
 const program = new Command()
   .name('dbs')
   .description('Text-authored disaster broadcast fiction → 1080p60 video')
-  .version('0.2.0');
+  .version('0.3.0');
 program
   .command('init [directory]')
   .description('Create a scenario workspace with YAML and audio folders; never overwrite files')
