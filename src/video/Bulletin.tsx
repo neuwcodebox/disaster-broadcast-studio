@@ -1,19 +1,23 @@
 import React from 'react';
 import type { CompiledEvent } from '../scenario.js';
-import { FPS, pages } from '../scenario.js';
+import { pages } from '../scenario.js';
 import { numberFont } from './fonts.js';
+import { PagedText } from './Information.js';
+import { pageAt } from './transitions.js';
 
 export function Bulletin({
   event,
   source,
   frame,
+  progress = 1,
 }: {
   event: Extract<CompiledEvent, { type: 'bulletin' }>;
   source: string;
   frame: number;
+  progress?: number;
 }) {
   const chunks = pages(event.text);
-  const page = Math.floor((frame - event.start) / FPS / event.pageSeconds) % chunks.length;
+  const { page } = pageAt(frame, event.start, event.pageSeconds, chunks.length);
   return (
     <section
       style={{
@@ -23,6 +27,8 @@ export function Bulletin({
         left: 0,
         right: 0,
         background: '#0a0d0f',
+        opacity: progress,
+        transform: `translateY(${16 * (1 - progress)}px)`,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
@@ -49,7 +55,7 @@ export function Bulletin({
           wordBreak: 'keep-all',
         }}
       >
-        {chunks[page]}
+        <PagedText chunks={chunks} frame={frame} start={event.start} seconds={event.pageSeconds} />
       </div>
       {chunks.length > 1 && (
         <div

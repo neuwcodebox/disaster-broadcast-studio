@@ -4,14 +4,7 @@ import type { FeatureCollection } from 'geojson';
 import type { Timeline } from '../scenario.js';
 import { FPS } from '../scenario.js';
 import type { Regions } from '../load.js';
-import {
-  stateAt,
-  clock,
-  envelope,
-  receiptHighlights,
-  statusEntry,
-  shutdownAt,
-} from '../timeline.js';
+import { stateAt, clock, envelope, receiptHighlights, shutdownAt } from '../timeline.js';
 import { AlertHistory } from './Alerts.js';
 import { BroadcastMap } from './Map.js';
 import { SignalEffects, signalLevels } from './SignalEffects.js';
@@ -19,6 +12,8 @@ import { AudioTrack } from './AudioTrack.js';
 import { Bulletin } from './Bulletin.js';
 import { useBundledFonts } from './useBundledFonts.js';
 import { bodyFont, numberFont } from './fonts.js';
+import { News, Status } from './Information.js';
+import { changeProgress, transitionAt } from './transitions.js';
 export type BroadcastProps = {
   timeline: Timeline;
   regions: Regions;
@@ -30,16 +25,13 @@ export function Broadcast(props: BroadcastProps) {
   const { timeline, regions, countries, provinces, audio } = props;
   const openingFrames = 5 * FPS;
   const frame = useCurrentFrame(),
-    state = stateAt(timeline, frame),
-    news = state.news;
+    state = stateAt(timeline, frame);
   useBundledFonts(JSON.stringify(timeline.scenario));
-  const status = state.visible.find((e) => e.type === 'status');
-  const bulletin = state.visible.find((e) => e.type === 'bulletin');
+  const bulletins = transitionAt(timeline.events, 'bulletin', state.contentFrame);
   const inset = state.visible.find((e) => e.type === 'inset');
   const legend = state.visible.find((e) => e.type === 'legend');
   const signal = signalLevels(state.visible, frame);
   const mapEvents = [...state.visible, ...receiptHighlights(timeline, state.contentFrame)];
-  const entry = statusEntry(state.contentFrame, status?.start ?? 0);
   const shutdown = shutdownAt(state.visible, frame);
   return (
     <AbsoluteFill
@@ -70,31 +62,11 @@ export function Broadcast(props: BroadcastProps) {
             gap: 14,
           }}
         >
-          {status?.type === 'status' &&
-            status.items.map((item, i) => (
-              <span
-                key={`${status.id}-${i}`}
-                style={{
-                  opacity: entry.opacity,
-                  transform: `translateY(${entry.offset}px)`,
-                  background: `${item.color}${Math.round(entry.glow * 255)
-                    .toString(16)
-                    .padStart(2, '0')}`,
-                  border: `1px solid ${item.color}`,
-                  color: item.color,
-                  padding: '3px 10px',
-                  fontSize: 18,
-                  lineHeight: 1.3,
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                {item.text}
-              </span>
-            ))}
+          <Status timeline={timeline} frame={state.contentFrame} />
           <time
             style={{
               marginLeft: 'auto',
+              flexShrink: 0,
               fontSize: 23,
               fontFamily: numberFont,
               fontVariantNumeric: 'tabular-nums',
@@ -141,6 +113,8 @@ export function Broadcast(props: BroadcastProps) {
                 padding: '14px 18px',
                 fontSize: 21,
                 color: '#d0d5da',
+                opacity: changeProgress(state.contentFrame, legend.start),
+                transform: `translateY(${10 * (1 - changeProgress(state.contentFrame, legend.start))}px)`,
               }}
             >
               {legend.items.map((item, i) => (
@@ -167,6 +141,8 @@ export function Broadcast(props: BroadcastProps) {
                 width: 420,
                 height: 290,
                 border: '1px solid #78858e',
+                opacity: changeProgress(state.contentFrame, inset.start),
+                transform: `translateY(${10 * (1 - changeProgress(state.contentFrame, inset.start))}px)`,
               }}
             >
               <BroadcastMap
@@ -209,12 +185,17 @@ export function Broadcast(props: BroadcastProps) {
         >
           <AlertHistory timeline={timeline} frame={state.contentFrame} />
         </aside>
-        {bulletin && (
-          <Bulletin
-            event={bulletin}
-            source={timeline.scenario.agencies[bulletin.source]}
-            frame={state.contentFrame}
-          />
+        {[bulletins.previous, bulletins.current].map(
+          (bulletin, i) =>
+            bulletin && (
+              <Bulletin
+                key={bulletin.id}
+                event={bulletin}
+                source={timeline.scenario.agencies[bulletin.source]}
+                frame={i === 0 ? Math.min(state.contentFrame, bulletin.end - 1) : state.contentFrame}
+                progress={i === 0 ? 1 - bulletins.progress : bulletins.progress}
+              />
+            ),
         )}
         <footer
           style={{
@@ -231,43 +212,7 @@ export function Broadcast(props: BroadcastProps) {
             gap: 24,
           }}
         >
-          {news?.type === 'news' && (
-            <>
-              <div style={{ minWidth: 135 }}>
-                <div style={{ fontSize: 18, color: '#b3c0c9', fontWeight: 600 }}>
-                  {timeline.scenario.agencies[news.source]}
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    color: '#85959f',
-                    marginTop: 5,
-                    fontFamily: numberFont,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {clock(
-                    news.publishedAt
-                      ? Date.parse(news.publishedAt)
-                      : stateAt(timeline, news.start).epoch,
-                    timeline.scenario.timezone,
-                  )}
-                </div>
-              </div>
-              <div
-                style={{
-                  fontSize: news.headline.length > 120 ? 23 : news.headline.length > 85 ? 25 : 30,
-                  lineHeight: 1.3,
-                  fontWeight: 400,
-                  wordBreak: 'keep-all',
-                  overflowWrap: 'anywhere',
-                  opacity: Math.min(1, (frame - news.start + 1) / 12),
-                }}
-              >
-                {news.headline}
-              </div>
-            </>
-          )}
+          <News timeline={timeline} frame={state.contentFrame} />
         </footer>
       </AbsoluteFill>
       {state.visible

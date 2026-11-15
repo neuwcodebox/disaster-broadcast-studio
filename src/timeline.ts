@@ -58,10 +58,6 @@ export function regionOpacity(
     fade * (fill && e.pulse ? 0.88 + 0.12 * Math.cos(((frame - e.start) / FPS) * Math.PI * 0.9) : 1)
   );
 }
-export function statusEntry(frame: number, start: number, duration = 0.55) {
-  const p = Math.max(0, Math.min(1, (frame - start) / (duration * FPS)));
-  return { opacity: 0.4 + 0.6 * p, offset: (1 - p) * -5, glow: (1 - p) * 0.22 };
-}
 export function shutdownAt(events: CompiledEvent[], frame: number) {
   const e = events.find(
     (e) => e.type === 'screen' && e.effect === 'shutdown' && e.intensity > 0 && active(e, frame),
