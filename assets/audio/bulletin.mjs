@@ -1,12 +1,9 @@
+import { tone } from './tones.mjs';
 export default function ({ Tone }) {
-  // A clear, sustained attention tone followed by a short resonant tail.
-  for (const [frequency, level, length] of [[440, 0.38, 0.92], [220, 0.12, 0.85], [880, 0.06, 0.6]]) {
-    const gain = new Tone.Gain(0).toDestination();
-    gain.gain.setValueAtTime(0, 0);
-    gain.gain.linearRampToValueAtTime(level, 0.018);
-    gain.gain.setValueAtTime(level, 0.24);
-    gain.gain.exponentialRampToValueAtTime(0.001, length - 0.04);
-    gain.gain.linearRampToValueAtTime(0, length);
-    new Tone.Oscillator(frequency, 'sine').connect(gain).start(0).stop(length);
+  // Two firm attention calls, with a longer second call to hold attention.
+  for (const [start, length] of [[0, 0.3], [0.44, 0.46]]) {
+    tone(Tone, 540, start, length, 0.4);
+    tone(Tone, 270, start, length, 0.12);
+    tone(Tone, 1080, start, length, 0.06);
   }
 }
