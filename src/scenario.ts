@@ -24,7 +24,7 @@ const alert = z
     level: z.enum(['안전안내', '긴급재난', '위급재난']).default('안전안내'),
     regions: z.array(z.string()).default([]),
     mapHighlight: z.union([z.literal(false), z.object({
-      duration: z.number().positive().max(20).default(2.4),
+      duration: z.number().positive().default(2.4),
       color: color.default('#d6e2ec'),
     }).strict()]).default({duration: 2.4, color: '#d6e2ec'}),
     sound: z.union([z.literal(false), z.literal('default'), z.object({
