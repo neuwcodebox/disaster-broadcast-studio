@@ -16,14 +16,14 @@ YAML/JSON 시나리오를 한국형 재난방송 호러 영상으로 만드는 C
 
 ## 설치와 시작
 
-**Node.js 22 이상**과 Chromium 실행에 필요한 OS 라이브러리가 필요합니다. 현재는 소스와 `.tgz` 패키지로 배포하며 공개 npm 게시는 하지 않았습니다.
+**Node.js 22 이상**과 Chromium 실행에 필요한 OS 라이브러리가 필요합니다.
 
-전달받은 패키지를 빈 작품 폴더에 설치합니다. 경로는 실제 `.tgz` 위치로 바꿉니다.
+빈 작품 폴더에 npm 패키지를 설치합니다.
 
 ```sh
 mkdir my-film
 cd my-film
-npm install /absolute/path/disaster-broadcast-studio-0.1.0.tgz
+npm install disaster-broadcast-studio
 npx dbs init
 ```
 

@@ -2,7 +2,7 @@
 
 ## 독립 작업 공간
 
-Node.js 22 이상을 사용한다. npm 패키지는 `disaster-broadcast-studio`, 실행명은 `dbs`다. 공개 npm 게시 전에는 제공된 `.tgz`를 `npm install /path/disaster-broadcast-studio-0.1.0.tgz`로 설치한다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `audio/`, `audio-code/`를 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
+Node.js 22 이상을 사용한다. `npm install disaster-broadcast-studio`로 패키지를 설치하며 실행명은 `dbs`다. 전달받은 `.tgz`가 있으면 `npm install /path/to/package.tgz`로도 설치할 수 있다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `audio/`, `audio-code/`를 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
 
 ```sh
 npx dbs schema --out scenario.schema.json
