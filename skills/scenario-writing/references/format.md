@@ -2,18 +2,20 @@
 
 ## 독립 작업 공간
 
-Node.js 22 이상을 사용한다. `npm install disaster-broadcast-studio`로 패키지를 설치하며 실행명은 `dbs`다. 전달받은 `.tgz`가 있으면 `npm install /path/to/package.tgz`로도 설치할 수 있다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `audio/`, `audio-code/`를 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
+Node.js 22 이상을 사용한다. `npm install disaster-broadcast-studio`로 패키지를 설치하며 실행명은 `dbs`다. 전달받은 `.tgz`가 있으면 `npm install /path/to/package.tgz`로도 설치할 수 있다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `audio/`, `audio-code/`, `output/`을 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
+
+`audio/`는 작품에서 참조할 음원과 합성 기록, `audio-code/`는 음원 생성 코드, `output/`은 영상·프레임·검토 자료 등 산출물을 두는 폴더다. 아래 명령은 초기화한 작품 폴더에서 실행한다. `--out`의 상대 경로는 현재 작업 폴더 기준이므로 산출물에는 `output/...`을 지정한다. 필요하면 그 아래에 용도별 하위 폴더를 둘 수 있다.
 
 ```sh
-npx dbs schema --out scenario.schema.json
+npx dbs schema --out output/scenario.schema.json
 npx dbs regions --search 철원 --json
 npx dbs validate scenario.yaml
 npx dbs preview scenario.yaml
 npx dbs inspect scenario.yaml --frame 360
-npx dbs frame scenario.yaml --frame 360 --out frame.png
-npx dbs render scenario.yaml --from 300 --to 599 --out clip.mp4
-npx dbs render scenario.yaml --out film.mp4
-npx dbs credits scenario.yaml --out description-credits.txt
+npx dbs frame scenario.yaml --frame 360 --out output/frame.png
+npx dbs render scenario.yaml --from 300 --to 599 --out output/clip.mp4
+npx dbs render scenario.yaml --out output/film.mp4
+npx dbs credits scenario.yaml --out output/description-credits.txt
 ```
 
 프레임은 0부터, 구간 끝은 포함한다. 300~599는 60fps에서 5초다. `inspect`는 해당 프레임의 이야기 시각·카메라·활성 연출·문자 이력을 렌더 없이 반환한다. `regions`는 내장 대한민국 시군구 ID와 이름을 검색한다. 코드를 추측하거나 옛 행정코드를 기억으로 넣지 않는다. 예를 들어 `dbs regions --search 철원`의 결과는 `51780 철원군`이다. `--json`으로 목록을 읽고 문자열 ID를 사용한 뒤 `dbs validate scenario.yaml`로 실제 경계와 대조한다. 내장 목록은 SGIS/admdongkor 2026-07-01 경계를 시군구로 병합한 것이다. 북한의 배경 육지는 시군구 선택 목록이 아니다. 사용자 GeoJSON을 쓰면 그 파일의 Feature ID를 읽어 사용한다. `schema`의 JSON Schema가 정확한 필드 계약이다.

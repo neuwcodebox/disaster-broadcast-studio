@@ -10,7 +10,7 @@ async function existing(file: string) {
 export async function initializeWorkspace(directory: string) {
   const root = path.resolve(directory);
   const owned = ['scenario.yaml', 'README.md'];
-  const directories = ['', 'audio', 'audio-code'];
+  const directories = ['', 'audio', 'audio-code', 'output'];
   for (const relative of directories) {
     const info = await existing(path.join(root, relative));
     if (info && (!info.isDirectory() || info.isSymbolicLink()))
