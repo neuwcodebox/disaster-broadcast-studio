@@ -18,7 +18,7 @@ const status = (at: number, duration: number, text = '상태') => ({
   type: 'status', at, duration, items: text ? [{ text, color: '#abcdef' }] : [],
 });
 
-test('alerts select distinct level sounds and preserve the advisory sound level', () => {
+test('alerts select distinct level sounds and preserve the advisory playback volume', () => {
   const sounds = notificationSounds(timeline(['안전안내', '긴급재난', '위급재난'].map((level) => ({
     type: 'alert', sender: 'a', text: '안내', level,
   }))));

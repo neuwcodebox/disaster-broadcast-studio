@@ -76,7 +76,7 @@ npx dbs regions --search 철원 --json
 npx dbs credits scenario.yaml --out description-credits.txt
 ```
 
-상태 변경·방송 안내·등급별 재난문자 효과음을 기본 제공합니다. 뉴스는 기본 무음으로 화면 전환만 사용합니다. 안전안내는 짧은 수신음, 긴급·위급재난은 더 크고 긴 경보음으로 구분하며 이벤트별로 끄거나 교체할 수 있습니다. 작품 고유 음향은 사용권이 있는 로컬 파일을 연결하거나, [Tone.js 음향 가이드](skills/scenario-writing/references/audio.md)에 따라 ES 모듈을 작성해 WAV로 합성합니다.
+상태 변경·방송 안내·등급별 재난문자 효과음을 기본 제공합니다. 뉴스는 기본 무음으로 화면 전환만 사용합니다. 안전안내는 휴대폰 진동형 수신음, 긴급·위급재난은 더 크고 긴 경보음으로 구분하며 이벤트별로 끄거나 교체할 수 있습니다. 작품 고유 음향은 사용권이 있는 로컬 파일을 연결하거나, [Tone.js 음향 가이드](skills/scenario-writing/references/audio.md)에 따라 ES 모듈을 작성해 WAV로 합성합니다.
 
 ```sh
 npx dbs audio audio-code/sound.mjs --duration 3 --seed 731 --out audio/sound.wav
