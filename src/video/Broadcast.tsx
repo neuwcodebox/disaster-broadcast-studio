@@ -15,6 +15,7 @@ import type { Regions } from '../load.js';
 import { stateAt, clock, envelope } from '../timeline.js';
 import { AlertHistory } from './Alerts.js';
 import { BroadcastMap } from './Map.js';
+import {SignalEffects, signalLevels} from './SignalEffects.js';
 import { fonts, bodyFont, numberFont } from './fonts.js';
 export type BroadcastProps = {
   timeline: Timeline;
@@ -25,6 +26,7 @@ export type BroadcastProps = {
 };
 export function Broadcast(props: BroadcastProps) {
   const { timeline, regions, countries, provinces, audio } = props;
+  const openingFrames = 5 * FPS;
   const frame = useCurrentFrame(),
     state = stateAt(timeline, frame),
     news = state.news;
@@ -73,8 +75,9 @@ export function Broadcast(props: BroadcastProps) {
   const bulletin = state.visible.find((e) => e.type === 'bulletin');
   const inset = state.visible.find((e) => e.type === 'inset');
   const legend = state.visible.find((e) => e.type === 'legend');
+  const signal = signalLevels(state.visible, frame);
   return (
-    <AbsoluteFill style={{ background: '#080b0d', fontFamily: bodyFont, color: '#dce1e5' }}>
+    <AbsoluteFill style={{ filter: signal.chromatic > 0 ? 'url(#dbs-chromatic)' : undefined, background: '#080b0d', fontFamily: bodyFont, color: '#dce1e5' }}>
       <AbsoluteFill style={{ opacity: state.opacity }}>
         <header
           style={{
@@ -304,7 +307,7 @@ export function Broadcast(props: BroadcastProps) {
         </footer>
       </AbsoluteFill>
       {state.visible
-        .filter((e) => e.type === 'screen')
+        .filter((e) => e.type === 'screen' && ['blackout', 'flash', 'interference'].includes(e.effect))
         .map((event) => {
           if (event.type !== 'screen') return null;
           const opacity =
@@ -326,18 +329,19 @@ export function Broadcast(props: BroadcastProps) {
             />
           );
         })}
-      {frame < 180 && (
+      <SignalEffects frame={frame} seed={timeline.scenario.seed} levels={signal}/>
+      {frame < openingFrames && (
         <AbsoluteFill
           style={{
             background: '#080b0d',
             justifyContent: 'center',
             alignItems: 'center',
-            opacity: frame < 150 ? 1 : (180 - frame) / 30,
+            opacity: frame < openingFrames - 30 ? 1 : (openingFrames - frame) / 30,
           }}
         >
           <div
             style={{
-              fontSize: timeline.scenario.title.length > 40 ? 25 : 30,
+              fontSize: timeline.scenario.title.length > 40 ? 30 : 36,
               fontWeight: 600,
               maxWidth: 1440,
               textAlign: 'center',
@@ -349,8 +353,8 @@ export function Broadcast(props: BroadcastProps) {
           </div>
           <div
             style={{
-              fontSize: 20,
-              color: '#8c9aa4',
+              fontSize: 24,
+              color: '#bac3c9',
               marginTop: 22,
               maxWidth: 1200,
               textAlign: 'center',

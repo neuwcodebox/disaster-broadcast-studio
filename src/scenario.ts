@@ -135,7 +135,7 @@ const screen = z
   .object({
     ...span,
     type: z.literal('screen'),
-    effect: z.enum(['blackout', 'flash', 'interference']),
+    effect: z.enum(['blackout', 'flash', 'interference', 'noise', 'scanlines', 'chromatic', 'dropout']),
     intensity: z.number().min(0).max(1).default(1),
     fadeIn: seconds.default(0),
     fadeOut: seconds.default(0),

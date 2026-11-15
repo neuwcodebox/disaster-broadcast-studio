@@ -2,7 +2,7 @@
 
 ## 독립 작업 공간
 
-Node.js 22 이상을 사용한다. npm 패키지는 `disaster-broadcast-studio`, 실행명은 `dbs`다. 공개 npm 게시 전에는 제공된 `.tgz`를 `npm install /path/disaster-broadcast-studio-0.1.0.tgz`로 설치한다. 작품과 자산은 별도 폴더에 둔다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
+Node.js 22 이상을 사용한다. npm 패키지는 `disaster-broadcast-studio`, 실행명은 `dbs`다. 공개 npm 게시 전에는 제공된 `.tgz`를 `npm install /path/disaster-broadcast-studio-0.1.0.tgz`로 설치한다. 작품은 `npx dbs init ./my-film`으로 초기화한다. `scenario.yaml`, `README.md`, `audio/`, `audio-code/receipt.mjs`를 생성한다. 경로를 생략하면 현재 폴더다. 기존 충돌 파일이 있으면 생성 전에 중단하며 사용자 파일은 덮어쓰지 않는다. 스킬은 [사용자 공통 설치](https://github.com/neuwcodebox/disaster-broadcast-studio/blob/main/skills/README.md)를 이용하며 작품 폴더에 복사하지 않는다. 개발 저장소나 개발용 AGENTS.md는 필요하지 않다.
 
 ```sh
 npx dbs schema --out scenario.schema.json
@@ -29,7 +29,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | --- | --- |
 | `version` | `1` |
 | `title` | 오프닝 작품 제목. 최대 70자. 정상 화면 상단 제목으로 반복하지 않음 |
-| `fictionNotice` | 필수 허구 고지. 첫 3초 오프닝에 표시. 최대 160자 |
+| `fictionNotice` | 필수 허구 고지. 첫 5초 오프닝에 표시. 최대 160자 |
 | `timezone` | 화면 시계 IANA 시간대. 기본 `Asia/Seoul` |
 | `seed` | 간섭 효과의 결정적 시드. 기본 1 |
 | `agencies` | 기관·뉴스 출처 ID → 표시명 사전 |
@@ -46,7 +46,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 컷은 `{id, duration, storyTime, fadeIn?, fadeOut?}`다. 길이·페이드는 초, `storyTime`은 시간대가 있는 ISO 시각이다. 컷은 목록 순서대로 이어진다. 컷 내부 시계는 현실과 1:1로 흐른다. 다음 `storyTime`은 이전 컷 종료 이후여야 한다. 배속 필드는 없으며 시간 생략은 컷 경계에서만 일어난다.
 
-영상 처음 3초는 제목·허구 고지 오프닝이다. 첫 컷 시간에 포함되므로 본문 읽기·중요 사건은 그 이후에 배치한다. 컷 페이드와 `screen.blackout`으로 시간 도약의 호흡을 만들 수 있다. 편집을 위해 매 사건마다 컷을 나누지 않는다.
+영상 처음 5초는 제목·허구 고지 오프닝이다. 첫 컷 시간에 포함되므로 본문 읽기·중요 사건은 그 이후에 배치한다. 컷 페이드와 `screen.blackout`으로 시간 도약의 호흡을 만들 수 있다. 편집을 위해 매 사건마다 컷을 나누지 않는다.
 
 공통 이벤트 필드는 `id`, `type`, `cut`, `at`다. `at`은 해당 컷 시작 후 초다. 문자 이외에는 양수 `duration`이 필요하며 활성 구간은 `[시작, 종료)`다. 컷을 넘겨 유지하려면 `carry: true`를 명시하고 끝이 전체 영상 안에 있어야 한다. ID는 영문·숫자·밑줄·하이픈을 사용한다. 지역 ID도 문자열로 쓴다.
 
@@ -95,7 +95,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | --- | --- | --- |
 | `audio` | `duration`, `asset`, `offset?`, `volume?`, `fadeIn?`, `fadeOut?`, `carry?` | 로컬 음원. offset 초, volume 기본 1(0~2), 페이드 기본 0 |
 | `silence` | `duration`, `carry?` | 모든 음원 음소거. 원음 재생 위치는 계속 진행 |
-| `screen` | `duration`, `effect`, `intensity?`, `fadeIn?`, `fadeOut?`, `carry?` | blackout/flash/interference. intensity 기본 1(0~1). 병렬 조합 가능 |
+| `screen` | `duration`, `effect`, `intensity?`, `fadeIn?`, `fadeOut?`, `carry?` | blackout/flash/interference/noise/scanlines/chromatic/dropout. intensity 기본 1(0~1). 병렬 조합 가능 |
 
 음원 시작 위치와 연출은 영상 프레임에서 계산한다. 컷 경계를 넘길 음원은 carry를 지정하고 로컬 파일의 길이도 확보한다. 음원을 자동 반복하지 않는다. 큰 음량·지속적인 노이즈·잦은 섬광으로 공포를 대신하지 않는다. 실제 기관의 경보음을 기본 삽입하지 않는다.
 
@@ -114,4 +114,29 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
       color: '#a5afb6'
     - text: 소방동원령 1호
       color: '#c28b66'
+```
+
+### 화면 후처리
+
+`screen`은 기존 blackout(검정 덮기)·flash(흰 화면)·interference(신호 간섭)와 함께 다음 효과를 지원한다. 모두 명시한 이벤트에만 적용되며 `at`, `duration`, `intensity`, `fadeIn`, `fadeOut`, `carry`를 사용한다. 기본 화면에 자동으로 켜지지 않는다.
+
+| effect | 표시 |
+| --- | --- |
+| noise | 프레임·작품 시드로 결정되는 흑백 잡음 |
+| scanlines | 가로 주사선. 프레임에 따라 천천히 이동 |
+| chromatic | 빨강·초록·파랑 채널의 가로 위치 어긋남 |
+| dropout | 짧게 위치가 바뀌는 수평 신호 누락 대역. 전체 화면 끊김은 blackout, 음향 끊김은 silence로 별도 지정 |
+
+여러 효과를 같은 구간에 배치할 수 있다. 새 후처리 네 종류는 같은 효과가 겹치면 강도를 합쳐 1 이내로 제한하고, 서로 다른 효과는 조합한다. 타이밍·페이드·잡음은 벽시계에 의존하지 않아 임의 프레임 탐색에서도 같다. 내용이 중요하면 낮은 강도와 짧은 구간부터 실제 출력에서 가독성을 확인한다.
+
+```yaml
+- id: signal-change
+  type: screen
+  cut: last
+  at: 12
+  duration: 0.4
+  effect: chromatic
+  intensity: 0.25
+  fadeIn: 0.05
+  fadeOut: 0.1
 ```

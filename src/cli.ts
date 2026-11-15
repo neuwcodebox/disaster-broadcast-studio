@@ -12,6 +12,12 @@ const program = new Command()
   .name('dbs')
   .description('Text-authored disaster broadcast fiction → 1080p60 video')
   .version('0.1.0');
+program.command('init [directory]')
+  .description('Create a scenario workspace with YAML and audio folders; never overwrite files')
+  .action(async (directory = '.') => {
+    const { initializeWorkspace } = await import('./workspace.js');
+    console.log(JSON.stringify({ ok: true, ...await initializeWorkspace(directory) }));
+  });
 program
   .command('validate <scenario>')
   .description('Validate YAML/JSON, references, local assets and timeline')
@@ -92,7 +98,7 @@ program
   });
 program
   .command('skill')
-  .description('Copy the standalone scenario-writing skill and references')
+  .description('Export bundled scenario-writing skill and references for offline/manual use')
   .requiredOption('-o, --out <directory>')
   .action(async (opts) => {
     await mkdir(path.dirname(path.resolve(opts.out)), { recursive: true });

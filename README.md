@@ -19,10 +19,11 @@ npm run build
 npm pack
 # 별도 작품 폴더에서
 npm install /path/disaster-broadcast-studio-0.1.0.tgz
-npx dbs skill --out .agents/skills/scenario-writing
+npx dbs init ./my-film
+cd my-film
 ```
 
-창작 AI에게 설치한 스킬을 사용하도록 요청하고 작품은 엔진 저장소 밖에 만든다. 스킬 전체를 별도로 복사해 전달해도 된다. [작품 형식·CLI](skills/scenario-writing/references/format.md)가 독립된 사용 설명서다.
+창작 스킬은 [설치 안내](skills/README.md)에 따라 사용자 범위에 한 번 설치한다. `dbs init`은 작품 YAML·음향 폴더·합성 코드 시작점만 생성하며 스킬을 작품마다 복사하지 않는다. 기존 파일과 충돌하면 생성 전에 오류를 반환한다. 창작 AI에게 설치한 스킬을 사용하도록 요청하고 작품은 엔진 저장소 밖에 만든다. [작품 형식·CLI](skills/scenario-writing/references/format.md)가 독립된 사용 설명서다.
 
 ## 제작
 
@@ -42,7 +43,7 @@ YAML/JSON의 `cuts`에 이야기 시작 시각과 길이, `events`에 문자·�
 
 음향은 [Tone.js 가이드](skills/scenario-writing/references/audio.md)의 모듈을 작성해 `dbs audio`로 WAV를 만들거나, 사용권이 있는 기존 파일을 연결한다. 합성은 브라우저의 오프라인 Web Audio에서 수행하며 결과 옆에 Tone·Chromium 버전과 시드·음량 기록을 남긴다.
 
-기본 출력은 H.264/AAC MP4, 1920×1080, 60fps다. 음원이 없는 작품도 무음 오디오 트랙을 포함한다. 처음 3초에는 작품 제목과 필수 허구 고지를 표시한다. 긴 문자는 전문을 페이지로 나누고, 최신 문자와 이전 이력을 함께 표시한다. 읽기 시간 경고가 나오면 다음 문자까지 간격을 늘린다.
+기본 출력은 H.264/AAC MP4, 1920×1080, 60fps다. 음원이 없는 작품도 무음 오디오 트랙을 포함한다. 처음 5초에는 작품 제목과 필수 허구 고지를 표시한다. 긴 문자는 전문을 페이지로 나누고, 최신 문자와 이전 이력을 함께 표시한다. 읽기 시간 경고가 나오면 다음 문자까지 간격을 늘린다.
 
 `--browser /path/to/chromium`으로 설치된 브라우저를 사용할 수 있다. 생략 시 Remotion이 Chrome Headless Shell을 관리하며 최초 준비에 네트워크가 필요하다. 준비 후 출력은 원격 지도·API를 사용하지 않는다. 기본 GPU 백엔드는 `angle`, Linux CPU 렌더링에는 `--gl swangle`을 지정한다. `--concurrency` 기본값은 2다. 60fps는 영상 규격이며 실시간 렌더 속도를 의미하지 않는다.
 

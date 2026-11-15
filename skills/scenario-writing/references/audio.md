@@ -4,14 +4,14 @@
 
 ## 실행 가능한 시작점
 
-스킬의 `examples/receipt.mjs`는 직접 합성한 짧은 수신음 예제이며 CC0-1.0이다. 실제 정부 경보음을 재현한 것이 아니다.
+`dbs init`은 스킬의 `examples/receipt.mjs`를 `audio-code/receipt.mjs`로 복사한다. 직접 합성한 짧은 수신음 예제이며 CC0-1.0이다. 실제 정부 경보음을 재현한 것이 아니다.
 
 ```sh
-npx dbs audio .agents/skills/scenario-writing/examples/receipt.mjs \
+npx dbs audio audio-code/receipt.mjs \
   --duration 0.55 --channels 1 --seed 731 --out audio/receipt.wav
 ```
 
-스킬을 다른 위치에 받았다면 모듈 경로를 맞춘다. 명령의 입력·출력·`--assets` 경로는 **현재 작업 폴더 기준**이다. 모듈 내부의 상대 `import`는 **그 모듈 기준**으로 번들된다. `.mjs`를 권장하며 `.js`도 지원한다. 음향 코드 역시 실행 코드이므로 작성·확인한 로컬 모듈을 실행한다.
+직접 작업공간을 구성했다면 스킬의 예제를 복사하거나 모듈을 작성하고 경로를 맞춘다. 명령의 입력·출력·`--assets` 경로는 **현재 작업 폴더 기준**이다. 모듈 내부의 상대 `import`는 **그 모듈 기준**으로 번들된다. `.mjs`를 권장하며 `.js`도 지원한다. 음향 코드 역시 실행 코드이므로 작성·확인한 로컬 모듈을 실행한다.
 
 ## 모듈 계약
 
