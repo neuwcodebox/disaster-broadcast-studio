@@ -54,12 +54,14 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 | `type` | 추가 필드 | 동작 |
 | --- | --- | --- |
-| `alert` | `sender`, `text`, `level?`, `regions?`, `corrects?`, `occurredAt?`, `publishedAt?`, `pageSeconds?` | 수신 이후 이력에 남는다. duration/carry 없음 |
+| `alert` | `sender`, `text`, `level?`, `regions?`, `corrects?`, `occurredAt?`, `publishedAt?`, `pageSeconds?` | 수신 이후 최신순 이력에 남는다. duration/carry 없음 |
 | `news` | `duration`, `source`, `headline`, `publishedAt?`, `carry?` | 하단 뉴스. 동시 1개. 최대 160자 |
 | `status` | `duration`, `items: [{text, color}]`, `carry?` | 상단 상태 박스 전체. 동시 1개 |
 | `bulletin` | `duration`, `source`, `heading`, `text`, `color?`, `pageSeconds?`, `carry?` | 지도·문자 부분을 덮는 방송 안내. 시계·상태·하단 뉴스 유지. 동시 1개 |
 
 `sender`와 `source`는 `agencies`의 ID다. 문자는 실제 수신 시각을 이벤트의 `at`으로 정한다. 발생·발표 시각을 별도로 주지 않으면 임의로 만들어 표시하지 않는다. 문자 등급은 `안전안내`(기본)·`긴급재난`·`위급재난`이다. 원문에 `[발신자 표시명]`이 있으면 그대로 사용하고, 없으면 앞에 붙인다. 별도 기관명 칸을 반복하지 않는다. 정정은 원 ID를 `corrects`로 참조하는 새 문자다. 서로 다른 기관의 상충된 주장은 데이터 오류가 아니다.
+
+문자 이력은 수신 최신순으로 쌓인다. 같은 시점에 도착한 문자는 시나리오 배열의 뒤 항목을 위에 둔다. 새 문자 도착 시 기존 항목이 아래로 이동하고, 패널 높이를 넘긴 항목은 아래쪽에 가려진다. 시간 도약 후에도 이전 수신 이력을 유지한다.
 
 문자와 방송 안내 본문은 100개 문자소 단위에서 자연스러운 공백을 찾아 분할하며 원문을 보존한다. `alert.pageSeconds` 기본 8초, `bulletin.pageSeconds` 기본 12초, 둘 다 최소 3초다. 장문 안내 전체 페이지가 끝나기 전에 다른 안내로 덮지 않는다. `validate`의 문자 읽기 경고를 확인한다. 방송 안내 길이도 작성자가 읽어 검토한다.
 
