@@ -253,7 +253,7 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
                   background: '#0b0e10f2',
                   padding: '6px 12px',
                   borderLeft: `3px solid ${e.color}`,
-                  fontSize: 18,
+                  fontSize: 28,
                   color: e.color,
                   whiteSpace: 'nowrap',
                 }}
@@ -295,7 +295,7 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
                       top: '50%',
                       left: 'calc(100% + 10px)',
                       transform: 'translateY(-50%)',
-                      fontSize: 22,
+                      fontSize: 32,
                       fontWeight: 600,
                       color: e.color,
                       whiteSpace: 'nowrap',

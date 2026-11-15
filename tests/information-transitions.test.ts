@@ -4,7 +4,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { compile, scenarioSchema } from '../src/scenario.js';
 import { stateAt } from '../src/timeline.js';
-import { News, PagedText, Status } from '../src/video/Information.js';
+import { News, Status } from '../src/video/Information.js';
 import { changeFrames, transitionAt } from '../src/video/transitions.js';
 
 const timeline = compile(
@@ -95,23 +95,6 @@ test('changed status blinks three times after entry, while retained status stays
     assert.equal(opacity(frame, '유지 항목'), 1);
   }
   for (const frame of [207, 243, 279, 315, 360]) assert.equal(opacity(frame, '새 상태'), 1);
-});
-test('page changes retain both pages only during the transition, including wraparound', () => {
-  const page = (frame: number) =>
-    renderToStaticMarkup(
-      React.createElement(PagedText, {
-        chunks: ['첫 페이지', '다음 페이지'],
-        frame,
-        start: 0,
-        seconds: 3,
-      }),
-    );
-  assert.doesNotMatch(page(179), /다음 페이지/);
-  assert.match(page(190), /첫 페이지/);
-  assert.match(page(190), /다음 페이지/);
-  assert.doesNotMatch(page(180 + changeFrames), /첫 페이지/);
-  assert.match(page(370), /첫 페이지/);
-  assert.match(page(370), /다음 페이지/);
 });
 test('all information transitions freeze with content during a clock jump and are seekable', () => {
   const frozen = stateAt(timeline, 599).contentFrame;

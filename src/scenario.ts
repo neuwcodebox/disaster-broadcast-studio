@@ -5,6 +5,14 @@ const seconds = z.number().finite().nonnegative();
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const position = z.tuple([z.number().min(-180).max(180), z.number().min(-85).max(85)]);
 const timestamp = z.string().datetime({ offset: true });
+const fitsText = (text: string, columns: number, lines: number) =>
+  text.split(/\r\n|\r|\n/).reduce(
+    (count, line) => count + Math.max(1, Math.ceil(Array.from(line.replace(/\t/g, '        ')).length / columns)),
+    0,
+  ) <= lines;
+const shortText = (characters: number, columns: number, lines: number) =>
+  z.string().trim().min(1).max(characters).refine((text) => fitsText(text, columns, lines),
+    'Shorten the text or remove line breaks so the full message fits at once');
 const camera = z
   .object({
     center: position,
@@ -37,7 +45,7 @@ const alert = z
     ...timed,
     type: z.literal('alert'),
     sender: id,
-    text: z.string().min(1).max(4000),
+    text: shortText(120, 16, 8),
     level: z.enum(['안전안내', '긴급재난', '위급재난']).default('안전안내'),
     regions: z.array(z.string()).default([]),
     mapHighlight: z
@@ -52,10 +60,8 @@ const alert = z
       ])
       .default({ duration: 2.4, color: '#d6e2ec' }),
     sound: notificationSound,
-    corrects: id.optional(),
     occurredAt: timestamp.optional(),
     publishedAt: timestamp.optional(),
-    pageSeconds: z.number().min(3).default(8),
   })
   .strict();
 const news = z
@@ -64,7 +70,7 @@ const news = z
     type: z.literal('news'),
     sound: notificationSound.default(false),
     source: id,
-    headline: z.string().min(1).max(160),
+    headline: shortText(64, 32, 2),
     publishedAt: timestamp.optional(),
   })
   .strict();
@@ -82,10 +88,9 @@ const bulletin = z
     type: z.literal('bulletin'),
     sound: notificationSound,
     source: id,
-    heading: z.string().min(1).max(80),
-    text: z.string().min(1).max(4000),
+    heading: shortText(40, 26, 2),
+    text: shortText(180, 30, 6),
     color: color.default('#b7c1c8'),
-    pageSeconds: z.number().min(3).default(12),
   })
   .strict();
 const chat = z
@@ -101,7 +106,7 @@ const chatMessage = z
     type: z.literal('chat-message'),
     chat: id,
     author: z.string().trim().min(1).max(20).regex(/^[^\r\n]+$/, 'Use a single line'),
-    text: z.string().trim().min(1).max(160).regex(/^[^\r\n]+$/, 'Use a single line'),
+    text: z.string().trim().min(1).max(80).regex(/^[^\r\n]+$/, 'Use a single line'),
     color: color.default('#9fb8cb'),
   })
   .strict();
@@ -302,26 +307,6 @@ export const FPS = 60;
 export const frames = (seconds: number) => Math.round(seconds * FPS);
 export const alertText = (sender: string, text: string) =>
   text.includes(`[${sender}]`) ? text : `[${sender}] ${text}`;
-export const pages = (text: string) => {
-  const result: string[] = [];
-  let remaining = Array.from(
-    new Intl.Segmenter('ko', { granularity: 'grapheme' }).segment(text),
-    (x) => x.segment,
-  );
-  while (remaining.length > 100) {
-    const part = remaining.slice(0, 100);
-    let boundary = 99;
-    for (let i = 99; i >= 60; i--)
-      if (/[\s]/.test(part[i])) {
-        boundary = i;
-        break;
-      }
-    result.push(remaining.slice(0, boundary + 1).join(''));
-    remaining = remaining.slice(boundary + 1);
-  }
-  if (remaining.length) result.push(remaining.join(''));
-  return result;
-};
 
 export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
   const errors: string[] = [];
@@ -376,11 +361,8 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
     if (e.type === 'alert') {
       if (!Object.hasOwn(scenario.agencies, e.sender))
         errors.push(`${path}.sender: unknown agency ${e.sender}`);
-      if (e.corrects) {
-        const prev = scenario.events.find((x) => x.id === e.corrects);
-        if (!prev || prev.type !== 'alert')
-          errors.push(`${path}.corrects: unknown alert ${e.corrects}`);
-      }
+      else if (!fitsText(alertText(scenario.agencies[e.sender], e.text), 16, 8))
+        errors.push(`${path}.text: shorten the message including its sender so the full text fits at once`);
     }
     if (
       e.type === 'zone' &&
@@ -389,6 +371,10 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       errors.push(`${path}.points: polygon ring must be closed`);
     if ((e.type === 'news' || e.type === 'bulletin') && !Object.hasOwn(scenario.agencies, e.source))
       errors.push(`${path}.source: unknown agency ${e.source}`);
+    else if (e.type === 'news' && !fitsText(scenario.agencies[e.source], 10, 2))
+      errors.push(`${path}.source: shorten the display name so the full source fits beside the headline`);
+    else if (e.type === 'bulletin' && !fitsText(scenario.agencies[e.source], 48, 2))
+      errors.push(`${path}.source: shorten the display name so the full source fits above the notice`);
     if (e.type === 'audio') {
       if (!Object.hasOwn(scenario.assets, e.asset))
         errors.push(`${path}.asset: unknown asset ${e.asset}`);
@@ -404,11 +390,6 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       else if (e.start < panel.start || e.start >= panel.end)
         errors.push(`events[${e.order}] (${e.id}).at: outside chat ${e.chat}`);
       else e.end = panel.end;
-    }
-    if (e.type === 'alert' && e.corrects) {
-      const prior = events.find((x) => x.id === e.corrects);
-      if (prior && prior.start >= e.start)
-        errors.push(`${e.id}.corrects: correction must follow original alert`);
     }
   }
   for (const cut of cuts) {

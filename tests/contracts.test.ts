@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { scenarioSchema, compile, pages, alertText } from '../src/scenario.js';
+import { scenarioSchema, compile, alertText } from '../src/scenario.js';
 import { stateAt, envelope } from '../src/timeline.js';
 import { makeCredits } from '../src/credits.js';
 import { loadScenario } from '../src/load.js';
@@ -34,7 +34,6 @@ const input = () => ({
       at: 1,
       sender: 'city',
       text: '정정 안내',
-      corrects: 'a',
     },
   ],
 });
@@ -93,21 +92,10 @@ test('cut crossing is explicit and audio envelope is frame based', () => {
   assert.equal(envelope(60, 0, 120, 1, 0), 1);
   assert.equal(envelope(120, 0, 120, 0, 0), 0);
 });
-test('correction cannot precede original and past-time cuts are rejected', () => {
-  const x = input();
-  x.events[0].corrects = 'b';
-  assert.throws(
-    () => compile(scenarioSchema.parse(x), new Set(['47190'])),
-    /correction must follow/,
-  );
+test('past-time cuts are rejected', () => {
   const y = input();
   y.cuts[1].storyTime = '2026-01-01T11:00:00+09:00';
   assert.throws(() => compile(scenarioSchema.parse(y), new Set(['47190'])), /storyTime/);
-});
-test('pagination preserves all original text', () => {
-  const text = '[시험시] 산지 인근 접근을 삼가고 실내에 머물러 주시기 바랍니다.\n'.repeat(30);
-  assert.equal(pages(text).join(''), text);
-  assert.ok(pages(text).every((p) => p.length <= 100));
 });
 test('external workspace resolves assets relative to scenario and reports missing files', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'dbs-contract-'));
@@ -297,12 +285,12 @@ test('reading warnings exclude all five seconds of the opening', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'dbs-reading-'));
   try {
     const raw = { ...input(), cuts: input().cuts.slice(0, 1), events: [
-      { id: 'early', type: 'alert', cut: 'first', at: 0, sender: 'city', text: '안내', pageSeconds: 6 },
+      { id: 'early', type: 'alert', cut: 'first', at: 0, sender: 'city', text: '안내' },
     ] };
     const file = path.join(root, 'scenario.json');
     await writeFile(file, JSON.stringify(raw));
-    assert.match((await loadScenario(file)).warnings.join('\n'), /early.*allow 6s/);
-    raw.cuts[0].duration = 11;
+    assert.match((await loadScenario(file)).warnings.join('\n'), /early.*allow 8s/);
+    raw.cuts[0].duration = 13;
     await writeFile(file, JSON.stringify(raw));
     assert.deepEqual((await loadScenario(file)).warnings, []);
   } finally {

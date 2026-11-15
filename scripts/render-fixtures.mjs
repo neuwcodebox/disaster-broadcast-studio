@@ -86,7 +86,6 @@ const base = {
       at: 0,
       sender: 'city',
       text: '[시험시청] 앞선 문자의 검증 지역을 정정합니다. 이전 문자와 이 문자가 별도 항목으로 남는지 확인합니다.',
-      corrects: 'alert',
     },
     {
       id: 'tone',
@@ -115,16 +114,12 @@ const base = {
 await writeFile(path.join(directory, 'first.json'), JSON.stringify(base, null, 2));
 const second = {
   ...base,
-  title: '장문 · 병렬 연출 검증',
+  title: '본문 · 병렬 연출 검증',
   cuts: [{ id: 'one', duration: 5, storyTime: '2026-02-01T07:00:00+09:00' }],
   events: [
     {
       ...base.events[0],
-      text:
-        '[시험시청] 장문 표시 검증입니다.\n' +
-        '실내에 머무르며 후속 안내를 확인하고, 주변의 다른 사람에게도 내용을 전달해 주시기 바랍니다. '.repeat(
-          7,
-        ),
+      text: '[시험시청] 실내에 머무르며 후속 안내를 확인하고, 주변의 다른 사람에게도 내용을 전달해 주시기 바랍니다.',
     },
     { ...base.events[1], duration: 5, carry: false },
     { ...base.events.find((e) => e.type === 'news'), duration: 2, carry: false },
@@ -212,7 +207,7 @@ const chat = {
     // Rapid arrivals exercise history density, rather than demonstrate reading-time pacing.
     { ...base.events[0], id: 'follow-up', at: 7, sound: false, level: '안전안내',
       text: '[시험시청] 앞선 안내의 대상 지역을 확인하고 후속 방송을 기다려 주시기 바랍니다. 문자 이력과 채팅을 함께 확인하는 시험 문안입니다.' },
-    { ...base.events[0], id: 'correction', at: 9, sound: false, corrects: 'alert',
+    { ...base.events[0], id: 'correction', at: 9, sound: false,
       text: '[시험시청] 앞선 안내를 정정합니다. 지역별 안내 내용은 최신 문자를 확인해 주시기 바랍니다. 실제 재난 안내가 아닙니다.' },
     { ...base.events[1], duration: 20 },
     { ...base.events.find((e) => e.type === 'news'), at: 5, duration: 15,
@@ -223,7 +218,7 @@ const chat = {
       ['밤산책', '어느 쪽이에요? 저희 동네는 조용한데', '#b6ab8d'],
       ['저녁하늘', '문자 이제 왔어요. 일단 창문 닫았습니다', '#9eb6a3'],
       ['강가사는사람', '아까는 밖에서 들렸는데 지금은 복도에서도 들려요', '#9fb8cb'],
-      ['문장길이검증', '가'.repeat(160), '#b6ab8d'],
+      ['동네주민', '저희 동네는 아직 조용합니다. 가족들과 집 안에서 기다리고 있어요. 다른 지역도 같은 문자를 받았나요?', '#b6ab8d'],
     ].map(([author, text, color], i) => ({
       id: `message-${i}`, type: 'chat-message', chat: 'live', cut: 'one',
       at: [5.5, 7, 9, 11, 15][i], author, text, color,
@@ -231,3 +226,23 @@ const chat = {
   ],
 };
 await writeFile(path.join(directory, 'chat.json'), JSON.stringify(chat, null, 2));
+const mobile = {
+  ...chat,
+  title: '모바일 가로 화면 · 가독성 검증',
+  cuts: [{ ...chat.cuts[0], duration: 50 }],
+  events: [
+    ...chat.events.map((event) => 'duration' in event ? { ...event, duration: 50 - event.at } : event),
+    { id: 'readiness', type: 'status', cut: 'one', at: 5, duration: 45, sound: false,
+      items: [{ text: '소방동원령 1호', color: '#c48b67' }, { text: '갑호비상', color: '#c8ba95' }] },
+    { id: 'long-alert', type: 'alert', cut: 'one', at: 14, sender: 'city', sound: false,
+      level: '위급재난',
+      text: '해안가·하천 주변 주민께서는 가까운 건물 안으로 이동하십시오. 창문과 출입문을 닫고 후속 안내를 확인하십시오.',
+      occurredAt: '2026-01-01T17:59:00+09:00', publishedAt: '2026-01-01T18:00:13+09:00' },
+    { id: 'notice', type: 'bulletin', cut: 'one', at: 38, duration: 12, source: 'city', sound: false,
+      heading: '방송 안내', text: '이 화면은 모바일 가로 전체화면에서 글자 크기와 명암을 확인하기 위한 허구의 방송입니다. 지도·재난문자·뉴스·채팅은 실제 긴급 서비스와 연결되지 않습니다.' },
+  ],
+};
+// Headlines are brief and remain fully visible while active.
+const mobileNews = mobile.events.find((event) => event.type === 'news');
+mobileNews.headline = '해안가·하천 주변 주민에 실내 대피 안내…관계 기관, 현장 상황 확인 중';
+await writeFile(path.join(directory, 'mobile.json'), JSON.stringify(mobile, null, 2));

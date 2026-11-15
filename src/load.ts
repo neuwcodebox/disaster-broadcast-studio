@@ -4,7 +4,7 @@ import { defaultSounds, notificationSounds } from './notifications.js';
 import { readBundledJson, packageRoot } from './assets.js';
 import { parseDocument } from 'yaml';
 import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
-import { compile, scenarioSchema, alertText, pages, FPS, type Timeline } from './scenario.js';
+import { compile, scenarioSchema, alertText, FPS, type Timeline } from './scenario.js';
 export type Regions = FeatureCollection<Polygon | MultiPolygon>;
 export type Loaded = {
   timeline: Timeline;
@@ -100,13 +100,12 @@ export async function loadScenario(file: string): Promise<Loaded> {
         nextAlert?.type === 'alert' &&
         nextAlert.text === a.text &&
         nextAlert.sender === a.sender &&
-        nextAlert.level === a.level &&
-        nextAlert.corrects === a.corrects
+        nextAlert.level === a.level
       )
         continue;
       const next = nextAlert?.start ?? timeline.durationInFrames;
       const readingSeconds =
-        pages(alertText(scenario.agencies[a.sender], a.text)).length * a.pageSeconds;
+        Math.max(8, Math.ceil(Array.from(alertText(scenario.agencies[a.sender], a.text)).length / 8));
       if (next - Math.max(a.start, 5 * FPS) < readingSeconds * FPS)
         warnings.push(
           `${a.id}: latest-message reading time is short; allow ${readingSeconds}s before the next alert/end`,

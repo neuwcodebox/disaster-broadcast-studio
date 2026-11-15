@@ -2,46 +2,8 @@ import React from 'react';
 import { FPS, type Timeline } from '../scenario.js';
 import { clock, notificationPulse, stateAt } from '../timeline.js';
 import { numberFont } from './fonts.js';
-import { changeFrames, changeProgress, pageAt, transitionAt } from './transitions.js';
-
-export function PagedText({
-  chunks,
-  frame,
-  start,
-  seconds,
-}: {
-  chunks: string[];
-  frame: number;
-  start: number;
-  seconds: number;
-}) {
-  const { page, previous, progress } = pageAt(frame, start, seconds, chunks.length);
-  return (
-    <div style={{ display: 'grid', overflow: 'hidden' }}>
-      {previous !== undefined && progress < 1 && (
-        <div
-          aria-hidden
-          style={{
-            gridArea: '1 / 1',
-            opacity: 1 - progress,
-            transform: `translateY(${-12 * progress}px)`,
-          }}
-        >
-          {chunks[previous]}
-        </div>
-      )}
-      <div
-        style={{
-          gridArea: '1 / 1',
-          opacity: progress,
-          transform: `translateY(${12 * (1 - progress)}px)`,
-        }}
-      >
-        {chunks[page]}
-      </div>
-    </div>
-  );
-}
+import { changeFrames, changeProgress, transitionAt } from './transitions.js';
+import { layout } from './layout.js';
 
 export function News({ timeline, frame }: { timeline: Timeline; frame: number }) {
   const { current, previous, progress } = transitionAt(timeline.events, 'news', frame);
@@ -55,8 +17,9 @@ export function News({ timeline, frame }: { timeline: Timeline; frame: number })
       }}
     >
       {[previous, current].map(
-        (news, i) =>
-          news && (
+        (news, i) => {
+          if (!news) return null;
+          return (
             <div
               key={news.id}
               aria-hidden={i === 0 || undefined}
@@ -67,17 +30,17 @@ export function News({ timeline, frame }: { timeline: Timeline; frame: number })
                 alignItems: 'center',
                 gap: 24,
                 opacity: i === 0 ? 1 - progress : progress,
-                transform: `translateY(${i === 0 ? -92 * progress : 92 * (1 - progress)}px)`,
+                transform: `translateY(${i === 0 ? -layout.footer * progress : layout.footer * (1 - progress)}px)`,
               }}
             >
-              <div style={{ minWidth: 135, flexShrink: 0 }}>
-                <div style={{ fontSize: 18, color: '#b3c0c9', fontWeight: 600 }}>
+              <div style={{ width: 280, flexShrink: 0, overflowWrap: 'anywhere' }}>
+                <div style={{ fontSize: 28, color: '#c6d0d7', fontWeight: 600, lineHeight: 1.3 }}>
                   {timeline.scenario.agencies[news.source]}
                 </div>
                 <div
                   style={{
-                    fontSize: 16,
-                    color: '#85959f',
+                    fontSize: 26,
+                    color: '#b0bec8',
                     marginTop: 5,
                     fontFamily: numberFont,
                     fontVariantNumeric: 'tabular-nums',
@@ -93,16 +56,20 @@ export function News({ timeline, frame }: { timeline: Timeline; frame: number })
               </div>
               <div
                 style={{
-                  fontSize: news.headline.length > 120 ? 23 : news.headline.length > 85 ? 25 : 30,
+                  fontSize: 40,
                   lineHeight: 1.3,
-                  wordBreak: 'keep-all',
+                  wordBreak: 'normal',
+                  whiteSpace: 'pre-wrap',
+                  minWidth: 0,
+                  flex: 1,
                   overflowWrap: 'anywhere',
                 }}
               >
                 {news.headline}
               </div>
             </div>
-          ),
+          );
+        },
       )}
       <div
         style={{
@@ -164,7 +131,7 @@ export function Status({ timeline, frame }: { timeline: Timeline; frame: number 
                         border: `1px solid ${badge.color}`,
                         color: badge.color,
                         padding: '3px 10px',
-                        fontSize: 18,
+                        fontSize: 28,
                         lineHeight: 1.3,
                         whiteSpace: 'nowrap',
                         background: `${badge.color}${Math.round(

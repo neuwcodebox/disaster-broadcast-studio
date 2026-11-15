@@ -15,6 +15,7 @@ import { useBundledFonts } from './useBundledFonts.js';
 import { bodyFont, numberFont } from './fonts.js';
 import { News, Status } from './Information.js';
 import { changeProgress, transitionAt } from './transitions.js';
+import { layout } from './layout.js';
 export type BroadcastProps = {
   timeline: Timeline;
   regions: Regions;
@@ -54,7 +55,7 @@ export function Broadcast(props: BroadcastProps) {
           style={{
             position: 'absolute',
             inset: '0 0 auto 0',
-            height: 48,
+            height: layout.header,
             display: 'flex',
             alignItems: 'center',
             padding: '0 26px',
@@ -68,7 +69,7 @@ export function Broadcast(props: BroadcastProps) {
             style={{
               marginLeft: 'auto',
               flexShrink: 0,
-              fontSize: 23,
+              fontSize: 32,
               fontFamily: numberFont,
               fontVariantNumeric: 'tabular-nums',
               color: state.jumping ? '#eef2f4' : '#bdc7ce',
@@ -88,9 +89,9 @@ export function Broadcast(props: BroadcastProps) {
           style={{
             position: 'absolute',
             left: 0,
-            top: 49,
-            right: 640,
-            bottom: 93,
+            top: layout.header + 1,
+            right: layout.sidebar,
+            bottom: layout.footer + 1,
           }}
         >
           <BroadcastMap
@@ -112,7 +113,7 @@ export function Broadcast(props: BroadcastProps) {
                 gap: 10,
                 background: '#0b0e10ed',
                 padding: '14px 18px',
-                fontSize: 21,
+                fontSize: 30,
                 color: '#d0d5da',
                 opacity: changeProgress(state.contentFrame, legend.start),
                 transform: `translateY(${10 * (1 - changeProgress(state.contentFrame, legend.start))}px)`,
@@ -164,7 +165,7 @@ export function Broadcast(props: BroadcastProps) {
                   padding: '7px 12px',
                   background: '#0b0e10f2',
                   borderBottom: '1px solid #485159',
-                  fontSize: 17,
+                  fontSize: 28,
                 }}
               >
                 {inset.title}
@@ -175,10 +176,10 @@ export function Broadcast(props: BroadcastProps) {
         <aside
           style={{
             position: 'absolute',
-            top: 49,
+            top: layout.header + 1,
             right: 0,
-            bottom: 93,
-            width: 640,
+            bottom: layout.footer + 1,
+            width: layout.sidebar,
             borderLeft: '1px solid #495159',
             background: '#0c1012',
             overflow: 'hidden',
@@ -198,7 +199,6 @@ export function Broadcast(props: BroadcastProps) {
                 key={bulletin.id}
                 event={bulletin}
                 source={timeline.scenario.agencies[bulletin.source]}
-                frame={i === 0 ? Math.min(state.contentFrame, bulletin.end - 1) : state.contentFrame}
                 progress={i === 0 ? 1 - bulletins.progress : bulletins.progress}
               />
             ),
@@ -209,7 +209,7 @@ export function Broadcast(props: BroadcastProps) {
             bottom: 0,
             left: 0,
             right: 0,
-            height: 92,
+            height: layout.footer,
             borderTop: '1px solid #606a72',
             display: 'flex',
             alignItems: 'center',
@@ -272,7 +272,7 @@ export function Broadcast(props: BroadcastProps) {
         >
           <div
             style={{
-              fontSize: timeline.scenario.title.length > 40 ? 30 : 36,
+              fontSize: 54,
               fontWeight: 600,
               maxWidth: 1440,
               textAlign: 'center',
@@ -284,7 +284,7 @@ export function Broadcast(props: BroadcastProps) {
           </div>
           <div
             style={{
-              fontSize: 24,
+              fontSize: 36,
               color: '#bac3c9',
               marginTop: 22,
               maxWidth: 1200,

@@ -35,7 +35,7 @@ export function useBundledFonts(text: string) {
                 `${weight} 28px "${font.family}"`,
                 font.id === 'mono'
                   ? '0123456789:.- /+'
-                  : text + ' 재난문자 수신 이력 발생 발표 이전 정정 안전안내 긴급재난 위급재난',
+                  : text + ' 재난문자 수신 이력 발생 발표 안전안내 긴급재난 위급재난',
               ),
             ),
           ),

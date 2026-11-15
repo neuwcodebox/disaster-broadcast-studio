@@ -1,10 +1,9 @@
 import React from 'react';
 import type { Timeline, CompiledEvent } from '../scenario.js';
-import { pages, alertText } from '../scenario.js';
+import { alertText } from '../scenario.js';
 import { stateAt, clock } from '../timeline.js';
 import { numberFont } from './fonts.js';
-import { PagedText } from './Information.js';
-import { changeProgress, pageAt } from './transitions.js';
+import { changeProgress } from './transitions.js';
 const colors: Record<string, string> = {
   안전안내: '#a0adb5',
   긴급재난: '#c2746e',
@@ -22,8 +21,6 @@ function AlertCard({
   timeline: Timeline;
 }) {
   if (event.type !== 'alert') return null;
-  const chunks = pages(alertText(timeline.scenario.agencies[event.sender], event.text));
-  const { page } = pageAt(frame, event.start, event.pageSeconds, chunks.length);
   const arrival = changeProgress(frame, event.start);
   const latest = emphasis > 0;
   const received = stateAt(timeline, event.start).epoch;
@@ -32,7 +29,7 @@ function AlertCard({
       <div style={{ minHeight: 0, overflow: 'hidden' }}>
         <article
           style={{
-            padding: `${17 + 3 * emphasis}px 24px ${20 + 2 * emphasis}px`,
+            padding: '16px 24px',
             opacity: arrival,
             transform: `translateY(${-14 * (1 - arrival)}px)`,
             boxShadow: `inset 4px 0 ${colors[event.level]}${Math.round(
@@ -50,9 +47,9 @@ function AlertCard({
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              fontSize: 17,
+              fontSize: 28,
               color: colors[event.level],
-              marginBottom: 12,
+              marginBottom: 10,
             }}
           >
             <b
@@ -62,7 +59,6 @@ function AlertCard({
                 fontWeight: 400,
               }}
             >
-              {event.corrects ? '정정 · ' : ''}
               {event.level}
             </b>
             <span
@@ -70,7 +66,7 @@ function AlertCard({
                 marginLeft: 'auto',
                 fontFamily: numberFont,
                 fontVariantNumeric: 'tabular-nums',
-                fontSize: 17,
+                fontSize: 26,
                 color: '#aab3b9',
               }}
             >
@@ -78,7 +74,7 @@ function AlertCard({
             </span>
           </div>
           {(event.occurredAt || event.publishedAt) && (
-            <div style={{ fontSize: 16, color: '#939fa7', marginBottom: 10 }}>
+            <div style={{ fontSize: 26, color: '#b0bac2', marginBottom: 8 }}>
               {event.occurredAt &&
                 `발생 ${clock(Date.parse(event.occurredAt), timeline.scenario.timezone)} `}
               {event.publishedAt &&
@@ -87,52 +83,17 @@ function AlertCard({
           )}
           <div
             style={{
-              fontSize: 22 + 6 * emphasis,
-              lineHeight: 1.65,
+              fontSize: 32 + 8 * emphasis,
+              lineHeight: 1.4,
               whiteSpace: 'pre-wrap',
-              wordBreak: 'keep-all',
+              wordBreak: 'normal',
               overflowWrap: 'anywhere',
-              color: latest ? '#e0e4e7' : '#aab5bd',
+              color: latest ? '#edf0f2' : '#c0c9d0',
             }}
           >
-            <PagedText
-              chunks={chunks}
-              frame={frame}
-              start={event.start}
-              seconds={event.pageSeconds}
-            />
+            {alertText(timeline.scenario.agencies[event.sender], event.text)}
           </div>
-          {chunks.length > 1 && (
-            <div
-              style={{
-                fontFamily: numberFont,
-                fontSize: 16,
-                color: '#839099',
-                marginTop: 12,
-                textAlign: 'right',
-              }}
-            >
-              {page + 1} / {chunks.length}
-            </div>
-          )}
-          {event.corrects && (
-            <div
-              style={{
-                fontSize: 16,
-                color: '#a4afb6',
-                marginTop: 12,
-                borderTop: '1px solid #343a3f',
-                paddingTop: 10,
-              }}
-            >
-              이전 문자 정정 ·{' '}
-              {clock(
-                stateAt(timeline, timeline.events.find((e) => e.id === event.corrects)!.start)
-                  .epoch,
-                timeline.scenario.timezone,
-              )}
-            </div>
-          )}
+
         </article>
       </div>
     </div>

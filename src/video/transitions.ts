@@ -30,13 +30,3 @@ export function transitionAt<T extends CompiledEvent['type']>(
     start,
   };
 }
-
-export function pageAt(frame: number, start: number, seconds: number, count: number) {
-  const frames = Math.round(seconds * FPS);
-  const turn = Math.floor(Math.max(0, frame - start) / frames);
-  return {
-    page: turn % count,
-    previous: turn > 0 && count > 1 ? (turn - 1) % count : undefined,
-    progress: turn > 0 && count > 1 ? changeProgress(frame, start + turn * frames) : 1,
-  };
-}

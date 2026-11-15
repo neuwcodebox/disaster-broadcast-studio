@@ -33,7 +33,7 @@ export function ChatPanel({
     >
       <div
         style={{
-          height: 36,
+          height: 42,
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
@@ -43,16 +43,16 @@ export function ChatPanel({
         }}
       >
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#b46e68' }} />
-        <span style={{ fontSize: chat.panel.title.length > 20 ? 16 : 18, fontWeight: 600 }}>
+        <span style={{ fontSize: chat.panel.title.length > 20 ? 20 : 28, fontWeight: 600 }}>
           {chat.panel.title}
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 14, color: '#89969e', letterSpacing: 1 }}>
+        <span style={{ marginLeft: 'auto', fontSize: 22, color: '#b2bdc5', letterSpacing: 1 }}>
           LIVE
         </span>
       </div>
       <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
         {chat.messages.length === 0 && (
-          <div style={{ padding: '16px 24px', color: '#89969e', fontSize: 18 }}>
+          <div style={{ padding: '16px 24px', color: '#b2bdc5', fontSize: 28 }}>
             아직 채팅이 없습니다.
           </div>
         )}
@@ -71,14 +71,14 @@ export function ChatPanel({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 3 }}>
-                      <span style={{ fontSize: 16, color: message.color, overflowWrap: 'anywhere' }}>
+                      <span style={{ fontSize: 24, color: message.color, overflowWrap: 'anywhere' }}>
                         {message.author}
                       </span>
-                      <time style={{ fontSize: 13, color: '#78868f', fontFamily: numberFont }}>
+                      <time style={{ fontSize: 22, color: '#abb8c2', fontFamily: numberFont, flexShrink: 0 }}>
                         {clock(stateAt(timeline, message.start).epoch, timeline.scenario.timezone)}
                       </time>
                     </div>
-                    <div style={{ fontSize: 20, lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                    <div style={{ fontSize: 28, lineHeight: 1.35, overflowWrap: 'anywhere' }}>
                       {message.text}
                     </div>
                   </article>

@@ -88,7 +88,7 @@ test('two chat panels cannot overlap', () => {
 test('chat requires short, nonempty single-line names and messages with valid colors', () => {
   for (const fields of [
     { author: ' ' }, { author: '가'.repeat(21) }, { author: '줄\n바꿈' },
-    { text: ' ' }, { text: '가'.repeat(161) }, { text: '줄\n바꿈' }, { color: 'red' },
+    { text: ' ' }, { text: '가'.repeat(81) }, { text: '줄\n바꿈' }, { color: 'red' },
     { duration: 2 },
   ]) {
     const data = input();
