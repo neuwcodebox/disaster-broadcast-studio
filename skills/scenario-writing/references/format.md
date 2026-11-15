@@ -122,13 +122,41 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | --- | --- | --- |
 | `region` | `duration`, `regions`, `color?`, `fillOpacity?`, `strokeColor?`, `strokeOpacity?`, `strokeWidth?`, `label?`, `pulse?`, `fadeIn?`, `fadeOut?`, `carry?` | 실제 행정구역 강조. 색 기본 `#b9615b`, pulse 기본 false |
 | `legend` | `duration`, `items: [{text, color, symbol?}]`, `carry?` | 지도 하단 범례. symbol은 fill(기본)/outline/line. 동시 1개 |
-| `marker` | `duration`, `position`, `color?`, `label?`, `effect?`, `carry?` | 지점 또는 확대 후 멈추는 링. effect는 point(기본)/ring |
+| `marker` | `duration`, `position`, `color?`, `label?`, `effect?`, `carry?` | 지점·확대 후 멈추는 링·반복 확산 링. effect는 point(기본)/ring/pulse |
 | `zone` | `duration`, `points`, `color?`, `opacity?`, `carry?` | 행정구역과 다른 작품상의 영역. 처음·끝 좌표가 같은 닫힌 링, 최소 4점. opacity 기본 0.18 |
-| `line` | `duration`, `points`, `color?`, `width?`, `drawSeconds?`, `dashed?`, `carry?` | 지도에 투영되는 연결·경로·경계선. 최소 2점. width 기본 2px, drawSeconds 기본 0, dashed 기본 false |
+| `circle` | `duration`, `center`, `radiusKm`, `color?`, `fillOpacity?`, `strokeWidth?`, `pulse?`, `fadeIn?`, `fadeOut?`, `carry?` | 지리 좌표에 투영한 km 반경 원. radiusKm는 0 초과~2000, fillOpacity 기본 0.12, strokeWidth 기본 2px(0~20), pulse 기본 false |
+| `line` | `duration`, `points`, `color?`, `width?`, `drawSeconds?`, `dashed?`, `flowSpeed?`, `fadeIn?`, `fadeOut?`, `carry?` | 지도에 투영되는 연결·경로·경계선. 최소 2점. width 기본 2px, drawSeconds 기본 0, dashed 기본 false, flowSpeed 기본 0 |
 | `camera` | `duration`, `to`, `ease?`, `carry?` | 카메라 보간. ease smooth(기본)/linear. 완료 위치 유지. 동시 1개 |
 | `inset` | `duration`, `camera`, `title`, `carry?` | 지도 내부의 지역 확대 화면. 동시 1개 |
 
 `line.drawSeconds` 동안 선이 처음부터 끝까지 나타난 뒤 이벤트 종료까지 유지된다. drawSeconds보다 이벤트가 먼저 끝나면 그 길이까지 나타난 뒤 사라진다. 점선과 조합할 수 있다. 영역·선은 지도 카메라와 함께 이동한다. 실제 행정구역을 강조할 때 임의 다각형으로 흉내 내지 말고 `region`을 쓴다. `zone`은 해상 통제구역·관측 범위처럼 행정 경계와 다른 작중 영역에 사용한다. 라벨·선·지점은 사건의 의미가 있을 때만 쓰며 지도에 모든 문장을 옮기지 않는다.
+
+`circle`은 `center: [경도, 위도]`에서 구면상의 거리로 반경을 계산한다. 화면 고정 픽셀 원이 아니므로 카메라 확대·기울기와 보조 지도에 맞춰 투영된다. 원 전체가 지도 지원 위도 -85~85도 안에 있어야 하며 극지방으로 벗어나는 반경은 검증 오류다. color 기본은 `#b9615b`이며 채우기와 선에 함께 쓴다. `pulse: true`는 2.4초마다 지정 반경까지 확산하며 사라지는 원을 반복한다. `marker.effect: pulse`는 화면 크기를 유지하는 지점 링을 반복하며 지리적 영향 반경을 의미하지 않는다. `line.flowSpeed`는 점선 한 주기가 초당 이동하는 횟수(-10~10)다. 양수는 points 진행 방향, 음수는 반대 방향이며 `dashed: false`에서는 적용하지 않는다. circle·line의 fadeIn/fadeOut은 영상 초 단위이며 합이 duration을 넘을 수 없다. 이 지도 연출은 시간 도약 동안 기존 콘텐츠와 함께 멈춘다.
+
+같은 작품의 `events`에서 관측 반경과 이동 경로를 병렬로 지정할 수 있다. 아래는 길이 20초 이상인 `opening` 컷의 예다. 원의 의미는 작성한 문안·범례로 전달하며 엔진이 위험 지역으로 판단하지 않는다.
+
+```yaml
+- id: observation-range
+  type: circle
+  cut: opening
+  at: 5
+  duration: 15
+  center: [127.3, 36.6]
+  radiusKm: 60
+  pulse: true
+  fadeIn: 0.4
+  fadeOut: 0.4
+- id: observed-route
+  type: line
+  cut: opening
+  at: 5
+  duration: 15
+  points: [[126.8, 36.2], [127.3, 36.6], [127.8, 37.1]]
+  dashed: true
+  flowSpeed: 1
+  drawSeconds: 3
+  fadeOut: 0.4
+```
 
 행정구역의 채우기 불투명도 `fillOpacity` 기본 0.36, 윤곽선 `strokeColor` 기본 color, `strokeOpacity` 기본 1, `strokeWidth` 기본 2px다. 채우기 없이 경계만 표시하려면 `fillOpacity: 0`, 채우기만 표시하려면 `strokeWidth: 0`을 준다. `fadeIn`·`fadeOut`은 초 단위이며 기본 0이다. `pulse`는 채우기 밝기만 완만하게 변화시키고 테두리는 유지한다. 같은 지역에 여러 이벤트를 겹칠 수 있으며 채우기 위에 윤곽선이 놓이고 같은 종류 안에서는 이벤트 순서대로 합성한다. `legend`는 작품이 지정한 의미만 설명한다. 범례가 없으면 엔진은 자동으로 의미를 붙이지 않는다. 서로 다른 사실을 나타내는 색·선은 문안·시점·범례와 함께 작성한다.
 
@@ -142,17 +170,17 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 
 | `type` | 추가 필드 | 동작 |
 | --- | --- | --- |
-| `audio` | `duration`, `asset`, `offset?`, `volume?`, `fadeIn?`, `fadeOut?`, `carry?` | 로컬 음원. offset 초, volume 기본 1(0~2), 페이드 기본 0 |
+| `audio` | `duration`, `asset`, `offset?`, `volume?`, `fadeIn?`, `fadeOut?`, `loop?`, `playbackRate?`, `carry?` | 로컬 음원. offset 원본 초, volume 기본 1(0~2), 페이드 기본 0, loop 기본 false, playbackRate 기본 1(0.25~4) |
 | `silence` | `duration`, `carry?` | 모든 음원 음소거. 원음 재생 위치는 계속 진행 |
-| `screen` | `duration`, `effect`, `intensity?`, `fadeIn?`, `fadeOut?`, `carry?` | blackout/flash/interference/noise/scanlines/chromatic/dropout/shutdown. intensity 기본 1(0~1). 병렬 조합 가능 |
+| `screen` | `duration`, `effect`, `intensity?`, `fadeIn?`, `fadeOut?`, `carry?` | blackout/flash/interference/noise/scanlines/chromatic/dropout/blur/desaturate/vignette/flicker/jitter/vhs/shutdown. intensity 기본 1(0~1). 병렬 조합 가능 |
 
-음원 시작 위치와 연출은 영상 프레임에서 계산한다. 컷 경계를 넘길 음원은 carry를 지정하고 로컬 파일의 길이도 확보한다. 음원을 자동 반복하지 않는다. 큰 음량·지속적인 노이즈·잦은 섬광으로 공포를 대신하지 않는다.
+음원 시작 위치와 연출은 영상 프레임에서 계산한다. 컷 경계를 넘길 음원은 carry를 지정한다. 기본은 한 번 재생이며 `loop: true`로 원본 offset부터 파일 끝까지 반복한다. offset은 playbackRate와 관계없이 원본 초이고, duration·페이드는 영상 초다. 예를 들어 원본 3초에서 offset: 1, playbackRate: 2, loop: true이면 남은 원본 2초를 영상 1초 주기로 반복한다. 속도 변경 시 음높이는 브라우저의 기본 보정을 따르며 오프라인 음원 합성 효과를 대신하지 않는다. 원본 길이가 offset보다 길어야 하며 실제 구간 출력으로 확인한다. `silence` 중에도 재생·반복 위치는 진행하고 침묵 종료 후 해당 위치부터 들린다. 큰 음량·지속적인 노이즈·잦은 섬광으로 공포를 대신하지 않는다.
 
 문자에는 등급별 기본음이 한 번 재생된다. 안전안내는 휴대폰 진동형 두 번 떨림의 0.55초, 긴급재난 2.4초, 위급재난 4.2초이며 긴급·위급은 단계적으로 더 크고 긴 EAS풍 경보다. 상태는 등장·항목 변경·해제 때 같은 높이로 두 번 울리는 짧은 전자음의 0.3초, 방송 안내는 시작 때 크고 묵직하게 두 번 울리는 1초의 알림음을 제공한다. 뉴스는 기본 무음이며 화면 전환으로 갱신을 알린다. 같은 상태를 연속 유지하면 다시 울리지 않고 교체·명시적 빈 항목 해제는 새 상태의 설정을 따른다. 자연 종료는 종료되는 상태의 설정을 따른다. 뉴스·방송 안내 종료에는 추가 음이 없다.
 
 `sound: false`로 끄거나 `sound: {asset: myTone, duration: 0.8, volume: 0.7}`로 사용자 자산을 지정한다. `alert`, `status`, `bulletin`은 `sound: default`, `news`는 `sound: false`가 기본값이다. 뉴스에 `sound: default`를 명시하면 0.28초의 짧은 단음을 한 번 재생한다. 별도 `audio` 이벤트로 수신음을 중복 삽입하지 않는다. `silence`는 모든 기본 효과음도 음소거한다.
 
-`shutdown`은 송출 화면을 최대 1.5초 동안 가로선→작은 점으로 수축하고 이벤트 종료까지 검은 화면을 유지한다. 전체 영상을 종료하는 효과가 아니므로 결말에서 충분한 duration을 지정한다. 신호가 사라지기 직전의 정보·음향·이후 침묵까지 작품 흐름으로 구성한다.
+`shutdown`은 송출 화면을 최대 1.5초 동안 가로선→작은 점으로 수축하고 이벤트 종료까지 검은 화면을 유지한다. intensity가 0이면 끄고 양수이면 정해진 수축을 실행하며, 이 효과에는 일반 fadeIn/fadeOut을 적용하지 않는다. 전체 영상을 종료하는 효과가 아니므로 결말에서 충분한 duration을 지정한다. 신호가 사라지기 직전의 정보·음향·이후 침묵까지 작품 흐름으로 구성한다.
 
 ## 짧은 상태 표시 예
 
@@ -181,8 +209,14 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | scanlines | 가로 주사선. 프레임에 따라 천천히 이동 |
 | chromatic | 빨강·초록·파랑 채널의 가로 위치 어긋남 |
 | dropout | 짧게 위치가 바뀌는 수평 신호 누락 대역. 전체 화면 끊김은 blackout, 음향 끊김은 silence로 별도 지정 |
+| blur | 강도에 비례하는 화면 흐림(최대 약 6px) |
+| desaturate | 색을 점차 빼며 강도 1에서 흑백 |
+| vignette | 화면 주변부를 어둡게 함 |
+| flicker | 시드·프레임으로 결정되는 짧은 명도 떨림 |
+| jitter | 작은 수평·수직 화면 흔들림 |
+| vhs | 움직이는 수평 추적 간섭 대역과 잔상 |
 
-여러 효과를 같은 구간에 배치할 수 있다. 새 후처리 네 종류는 같은 효과가 겹치면 강도를 합쳐 1 이내로 제한하고, 서로 다른 효과는 조합한다. 타이밍·페이드·잡음은 벽시계에 의존하지 않아 임의 프레임 탐색에서도 같다. 내용이 중요하면 낮은 강도와 짧은 구간부터 실제 출력에서 가독성을 확인한다.
+여러 효과를 같은 구간에 배치할 수 있다. 위 후처리 10종은 같은 효과가 겹치면 강도를 합쳐 1 이내로 제한하고, 서로 다른 효과는 조합한다. 강도 0은 화면을 바꾸지 않는다. 타이밍·페이드·잡음은 벽시계에 의존하지 않아 임의 프레임 탐색에서도 같다. 시간 도약 중에는 유지된 콘텐츠의 후처리도 멈춘다. blackout과 shutdown의 검정 위로 후처리 잡음이 새어 나오지 않는다. 내용이 중요하면 낮은 강도와 짧은 구간부터 실제 출력에서 가독성을 확인한다.
 
 ```yaml
 - id: signal-change

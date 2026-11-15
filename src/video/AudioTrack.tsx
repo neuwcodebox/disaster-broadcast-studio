@@ -28,6 +28,10 @@ export function AudioTrack({
             <Audio
               src={staticFile(audio[event.asset])}
               trimBefore={Math.round(event.offset * FPS)}
+              loop={event.loop}
+              playbackRate={event.playbackRate}
+              // Use the outer timeline frame so fades and silence continue
+              // across loop iterations and stay independent of source speed.
               volume={
                 muted
                   ? 0

@@ -3,9 +3,10 @@ import * as maplibregl from 'maplibre-gl';
 import type { Map as MapInstance, StyleSpecification } from 'maplibre-gl';
 import { useBufferState, useDelayRender, useRemotionEnvironment, staticFile } from 'remotion';
 import type { FeatureCollection } from 'geojson';
-import { FPS, type Camera, type CompiledEvent } from '../scenario.js';
+import { type Camera, type CompiledEvent } from '../scenario.js';
 import type { Regions } from '../load.js';
 import {regionOpacity} from '../timeline.js';
+import { circleAt, MapShapes, MarkerGlyph } from './map/effects.js';
 const style = (
   countries: FeatureCollection,
   regions: Regions,
@@ -129,7 +130,9 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
   const cameraKey=JSON.stringify(camera);
   const regionEvents=events.filter(e=>e.type==='region');
   const ids=[...new Set(regionEvents.flatMap(e=>e.regions))].sort();
-  const requestKey=JSON.stringify([cameraKey,ids,events.filter(e=>['marker','zone','line'].includes(e.type))]);
+  const circles = events.filter(e => e.type === 'circle');
+  const circlePoints = circles.map(e => circleAt(e, frame).points);
+  const requestKey=JSON.stringify([cameraKey,ids,events.filter(e=>['marker','circle','zone','line'].includes(e.type)),circlePoints]);
   useEffect(()=>{
     const m=map.current;if(!m||requestKey===completed.current)return;
     const handle=delayRender(`Projecting map frame ${frame}`);let settled=false,cancelled=false;
@@ -185,55 +188,7 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
     </svg>
       <div ref={markers} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
-          {events.map((e) => {
-            if (e.type === 'zone')
-              return (
-                <polygon
-                  key={e.id}
-                  data-geometry={JSON.stringify(e.points)}
-                  fill={e.color}
-                  fillOpacity={e.opacity}
-                  stroke={e.color}
-                  strokeWidth={1.5}
-                />
-              );
-            if (e.type !== 'line') return null;
-            const progress = e.drawSeconds
-              ? Math.min(1, (frame - e.start) / FPS / e.drawSeconds)
-              : 1;
-            const maskId = `${inset ? 'inset' : 'main'}-${e.id}`;
-            return (
-              <g key={e.id}>
-                <defs>
-                  <mask
-                    id={maskId}
-                    maskUnits="userSpaceOnUse"
-                    x="0"
-                    y="0"
-                    width="100%"
-                    height="100%"
-                  >
-                    <polyline
-                      data-geometry={JSON.stringify(e.points)}
-                      fill="none"
-                      stroke="white"
-                      strokeWidth={e.width + 2}
-                      pathLength={1}
-                      strokeDasharray={`${progress} 2`}
-                    />
-                  </mask>
-                </defs>
-                <polyline
-                  data-geometry={JSON.stringify(e.points)}
-                  fill="none"
-                  stroke={e.color}
-                  strokeWidth={e.width}
-                  strokeDasharray={e.dashed ? '8 7' : undefined}
-                  mask={`url(#${maskId})`}
-                />
-              </g>
-            );
-          })}
+          <MapShapes events={events} frame={frame} inset={inset} />
         </svg>
         {events
           .filter((e) => e.type === 'region' && e.label)
@@ -266,9 +221,6 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
           .filter((e) => e.type === 'marker')
           .map((e) => {
             if (e.type !== 'marker') return null;
-            const age = (frame - e.start) / FPS,
-              ring = e.effect === 'ring',
-              size = ring ? 24 + Math.min(age, 3) * 25 : 13;
             return (
               <div
                 key={e.id}
@@ -276,16 +228,7 @@ export function BroadcastMap({camera,countries,regions,provinces,events,frame,in
                 data-lat={e.position[1]}
                 style={{ position: 'absolute', transform: 'translate(-50%,-50%)' }}
               >
-                <div
-                  style={{
-                    width: size,
-                    height: size,
-                    border: `2px solid ${e.color}`,
-                    background: ring ? 'transparent' : e.color,
-                    borderRadius: '50%',
-                    opacity: ring ? Math.max(0.3, 1 - age / 4) : 1,
-                  }}
-                />
+                <MarkerGlyph event={e} frame={frame} />
                 {e.label && (
                   <span
                     data-map-text="marker"

@@ -8,7 +8,7 @@ import { stateAt, clock, envelope, receiptHighlights, shutdownAt } from '../time
 import { AlertHistory } from './Alerts.js';
 import { ChatPanel } from './Chat.js';
 import { BroadcastMap } from './Map.js';
-import { SignalEffects, signalLevels } from './SignalEffects.js';
+import { SignalEffects, signalLevels, signalStyle } from './SignalEffects.js';
 import { AudioTrack } from './AudioTrack.js';
 import { Bulletin } from './Bulletin.js';
 import { useBundledFonts } from './useBundledFonts.js';
@@ -33,21 +33,23 @@ export function Broadcast(props: BroadcastProps) {
   const bulletins = transitionAt(timeline.events, 'bulletin', state.contentFrame);
   const inset = state.visible.find((e) => e.type === 'inset');
   const legend = state.visible.find((e) => e.type === 'legend');
-  const signal = signalLevels(state.visible, frame);
+  const signal = signalLevels(state.visible, state.contentFrame);
   const mapEvents = [...state.visible, ...receiptHighlights(timeline, state.contentFrame)];
-  const shutdown = shutdownAt(state.visible, frame);
+  const shutdown = shutdownAt(state.visible, state.contentFrame);
   const jumpStrength = timeJumpStrength(state.timeJump);
   return (
     <AbsoluteFill
       style={{
-        filter: signal.chromatic > 0 ? 'url(#dbs-chromatic)' : undefined,
-        background: shutdown ? '#000' : '#080b0d',
+        background: '#000',
+        overflow: 'hidden',
         fontFamily: bodyFont,
         color: '#dce1e5',
       }}
     >
+      <AbsoluteFill style={shutdown?.black ? undefined : signalStyle(signal, state.contentFrame, timeline.scenario.seed)}>
       <AbsoluteFill
         style={{
+          background: '#080b0d',
           opacity: shutdown?.black ? 0 : state.opacity,
           transform: shutdown ? `scale(${shutdown.x},${shutdown.y})` : undefined,
           transformOrigin: '50% 50%',
@@ -232,6 +234,22 @@ export function Broadcast(props: BroadcastProps) {
         </AbsoluteFill>
         <TimeJump jump={state.timeJump} />
       </AbsoluteFill>
+      {shutdown?.line && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            height: 2,
+            width: `${shutdown.x * 100}%`,
+            transform: 'translate(-50%,-50%)',
+            background: '#dce5e9',
+            boxShadow: '0 0 10px #a9c9db',
+          }}
+        />
+      )}
+      {!shutdown?.black && <SignalEffects frame={state.contentFrame} seed={timeline.scenario.seed} levels={signal} />}
+      </AbsoluteFill>
       {state.visible
         .filter(
           (e) => e.type === 'screen' && ['blackout', 'flash', 'interference'].includes(e.effect),
@@ -239,8 +257,8 @@ export function Broadcast(props: BroadcastProps) {
         .map((event) => {
           if (event.type !== 'screen') return null;
           const opacity =
-            envelope(frame, event.start, event.end, event.fadeIn, event.fadeOut) * event.intensity;
-          const noise = ((frame * 1103515245 + timeline.scenario.seed * 12345) >>> 0) % 13;
+            envelope(state.contentFrame, event.start, event.end, event.fadeIn, event.fadeOut) * event.intensity;
+          const noise = ((state.contentFrame * 1103515245 + timeline.scenario.seed * 12345) >>> 0) % 13;
           return (
             <AbsoluteFill
               key={event.id}
@@ -257,21 +275,6 @@ export function Broadcast(props: BroadcastProps) {
             />
           );
         })}
-      {shutdown?.line && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            height: 2,
-            width: `${shutdown.x * 100}%`,
-            transform: 'translate(-50%,-50%)',
-            background: '#dce5e9',
-            boxShadow: '0 0 10px #a9c9db',
-          }}
-        />
-      )}
-      <SignalEffects frame={frame} seed={timeline.scenario.seed} levels={signal} />
       {frame < openingFrames && (
         <AbsoluteFill
           style={{

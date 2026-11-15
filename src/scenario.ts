@@ -128,6 +128,23 @@ const line = z
     width: z.number().positive().default(2),
     drawSeconds: seconds.default(0),
     dashed: z.boolean().default(false),
+    flowSpeed: z.number().min(-10).max(10).default(0),
+    fadeIn: seconds.default(0),
+    fadeOut: seconds.default(0),
+  })
+  .strict();
+const circle = z
+  .object({
+    ...span,
+    type: z.literal('circle'),
+    center: position,
+    radiusKm: z.number().positive().max(2000),
+    color: color.default('#b9615b'),
+    fillOpacity: z.number().min(0).max(1).default(0.12),
+    strokeWidth: z.number().min(0).max(20).default(2),
+    fadeIn: seconds.default(0),
+    fadeOut: seconds.default(0),
+    pulse: z.boolean().default(false),
   })
   .strict();
 const highlight = z
@@ -168,7 +185,7 @@ const marker = z
     position,
     label: z.string().max(80).optional(),
     color: color.default('#c9d0d5'),
-    effect: z.enum(['point', 'ring']).default('point'),
+    effect: z.enum(['point', 'ring', 'pulse']).default('point'),
   })
   .strict();
 const cameraEvent = z
@@ -196,6 +213,8 @@ const audio = z
     volume: z.number().min(0).max(2).default(1),
     fadeIn: seconds.default(0),
     fadeOut: seconds.default(0),
+    loop: z.boolean().default(false),
+    playbackRate: z.number().min(0.25).max(4).default(1),
   })
   .strict();
 const mute = z.object({ ...span, type: z.literal('silence') }).strict();
@@ -211,6 +230,12 @@ const screen = z
       'scanlines',
       'chromatic',
       'dropout',
+      'blur',
+      'desaturate',
+      'vignette',
+      'flicker',
+      'jitter',
+      'vhs',
       'shutdown',
     ]),
     intensity: z.number().min(0).max(1).default(1),
@@ -270,6 +295,7 @@ export const scenarioSchema = z
           chatMessage,
           zone,
           line,
+          circle,
           highlight,
           legend,
           marker,
@@ -369,6 +395,8 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       (e.points[0][0] !== e.points.at(-1)![0] || e.points[0][1] !== e.points.at(-1)![1])
     )
       errors.push(`${path}.points: polygon ring must be closed`);
+    if (e.type === 'circle' && Math.abs(e.center[1]) + e.radiusKm / 6371.0088 * 180 / Math.PI > 85)
+      errors.push(`${path}.radiusKm: circle exceeds supported map latitudes -85..85`);
     if ((e.type === 'news' || e.type === 'bulletin') && !Object.hasOwn(scenario.agencies, e.source))
       errors.push(`${path}.source: unknown agency ${e.source}`);
     else if (e.type === 'news' && !fitsText(scenario.agencies[e.source], 10, 2))

@@ -281,6 +281,41 @@ test('region fades cannot exceed the authored event duration', () => {
   assert.throws(() => compile(scenario, new Set(['47190'])), /region.*fades exceed duration/);
 });
 
+test('extended map and audio controls enforce bounds, defaults and cut crossing', () => {
+  const raw = { ...input(), assets: { bed: { path: 'bed.wav', source: 'test', license: 'CC0' } } };
+  const events = [
+    { id: 'radius', type: 'circle', cut: 'first', at: 9, duration: 3, center: [127, 36], radiusKm: 50 },
+    { id: 'route', type: 'line', cut: 'first', at: 9, duration: 3, points: [[127, 36], [128, 37]], dashed: true, flowSpeed: -2 },
+    { id: 'bed', type: 'audio', cut: 'first', at: 9, duration: 3, asset: 'bed', loop: true, playbackRate: 1.5 },
+  ];
+  assert.throws(() => compile(scenarioSchema.parse({ ...raw, events }), new Set()), /carry/);
+  const scenario = scenarioSchema.parse({ ...raw, events: events.map((e) => ({ ...e, carry: true })) });
+  const timeline = compile(scenario, new Set());
+  assert.deepEqual(stateAt(timeline, 660).visible.map((e) => e.id), ['radius', 'route', 'bed']);
+  assert.deepEqual(stateAt(timeline, 720).visible, []);
+  assert.equal(scenario.events[0].type === 'circle' && scenario.events[0].fillOpacity, 0.12);
+  for (const e of events.slice(0, 2)) {
+    assert.throws(() => compile(scenarioSchema.parse({ ...raw, events: [{ ...e, at: 0, fadeIn: 2, fadeOut: 2 }] }), new Set()), /fades exceed duration/);
+  }
+  for (const event of [
+    { ...events[0], radiusKm: 0 }, { ...events[0], radiusKm: 2001 },
+    { ...events[0], center: [181, 36] }, { ...events[0], fillOpacity: 1.01 },
+    { ...events[0], strokeWidth: -1 }, { ...events[0], strokeWidth: 21 },
+    { ...events[1], flowSpeed: 11 }, { ...events[1], fadeOut: -1 },
+    { ...events[2], playbackRate: 0.24 }, { ...events[2], playbackRate: 4.01 },
+    { ...events[2], loop: 'yes' },
+  ]) assert.equal(scenarioSchema.safeParse({ ...raw, events: [event] }).success, false);
+  const original = scenarioSchema.parse({ ...raw, events: [{ ...events[2], at: 0, loop: undefined, playbackRate: undefined }] });
+  const audio = original.events[0];
+  assert.equal(audio.type === 'audio' && audio.loop, false);
+  assert.equal(audio.type === 'audio' && audio.playbackRate, 1);
+  for (const latitude of [-82, 82]) {
+    assert.throws(() => compile(scenarioSchema.parse({ ...raw, events: [
+      { ...events[0], at: 0, center: [40, latitude], radiusKm: 2000 },
+    ] }), new Set()), /radius.*radiusKm.*supported map latitudes/);
+  }
+});
+
 test('reading warnings exclude all five seconds of the opening', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'dbs-reading-'));
   try {
