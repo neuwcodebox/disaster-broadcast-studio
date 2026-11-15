@@ -202,3 +202,27 @@ const overlays = {
   ],
 };
 await writeFile(path.join(directory, 'overlays.json'), JSON.stringify(overlays, null, 2));
+const chat = {
+  ...base,
+  title: '스트리밍 채팅 · 기술 검증',
+  assets: {},
+  cuts: [{ id: 'one', duration: 20, storyTime: '2026-01-01T18:00:00+09:00' }],
+  events: [
+    { ...base.events[0], at: 5, sound: false },
+    { ...base.events[1], duration: 20 },
+    { ...base.events.find((e) => e.type === 'news'), at: 5, duration: 15,
+      headline: '현황판 시험 송출…시청자 반응과 안내 가독성 확인' },
+    { id: 'live', type: 'chat', cut: 'one', at: 5, duration: 15 },
+    ...[
+      ['강가사는사람', '안내 방송도 같은 말 계속 나오는데요', '#9fb8cb'],
+      ['밤산책', '어느 쪽이에요? 저희 동네는 조용한데', '#b6ab8d'],
+      ['저녁하늘', '문자 이제 왔어요. 일단 창문 닫았습니다', '#9eb6a3'],
+      ['강가사는사람', '아까는 밖에서 들렸는데 지금은 복도에서도 들려요', '#9fb8cb'],
+      ['문장길이검증', '가'.repeat(160), '#b6ab8d'],
+    ].map(([author, text, color], i) => ({
+      id: `message-${i}`, type: 'chat-message', chat: 'live', cut: 'one',
+      at: [5.5, 7, 9, 11, 15][i], author, text, color,
+    })),
+  ],
+};
+await writeFile(path.join(directory, 'chat.json'), JSON.stringify(chat, null, 2));

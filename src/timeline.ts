@@ -1,5 +1,14 @@
 import { FPS, type Timeline, type Camera, type CompiledEvent } from './scenario.js';
 export const active = (e: CompiledEvent, frame: number) => e.start <= frame && frame < e.end;
+export function chatAt(t: Timeline, frame: number) {
+  const panel = t.events.find((e) => e.type === 'chat' && active(e, frame));
+  if (!panel || panel.type !== 'chat') return null;
+  const messages = t.events.filter(
+    (e): e is Extract<CompiledEvent, { type: 'chat-message' }> =>
+      e.type === 'chat-message' && e.chat === panel.id && e.start <= frame,
+  );
+  return { panel, messages };
+}
 export const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 // Three smooth pulses, bounded by the authored frame interval.
 export function notificationPulse(frame: number, start: number, end: number) {
@@ -108,6 +117,7 @@ export function stateAt(t: Timeline, frame: number) {
     contentFrame,
     camera: cameraAt(t, contentFrame),
     alerts: t.events.filter((e) => e.type === 'alert' && e.start <= contentFrame).reverse(),
+    chat: chatAt(t, contentFrame),
     visible,
     news: visible.find((e) => e.type === 'news'),
     opacity: Math.min(

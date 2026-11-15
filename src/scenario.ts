@@ -88,6 +88,23 @@ const bulletin = z
     pageSeconds: z.number().min(3).default(12),
   })
   .strict();
+const chat = z
+  .object({
+    ...span,
+    type: z.literal('chat'),
+    title: z.string().trim().min(1).max(30).regex(/^[^\r\n]+$/, 'Use a single line').default('실시간 채팅'),
+  })
+  .strict();
+const chatMessage = z
+  .object({
+    ...timed,
+    type: z.literal('chat-message'),
+    chat: id,
+    author: z.string().trim().min(1).max(20).regex(/^[^\r\n]+$/, 'Use a single line'),
+    text: z.string().trim().min(1).max(160).regex(/^[^\r\n]+$/, 'Use a single line'),
+    color: color.default('#9fb8cb'),
+  })
+  .strict();
 const zone = z
   .object({
     ...span,
@@ -244,6 +261,8 @@ export const scenarioSchema = z
           news,
           status,
           bulletin,
+          chat,
+          chatMessage,
           zone,
           line,
           highlight,
@@ -379,6 +398,13 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
     return [{ ...e, start, end, order: i }];
   });
   for (const e of events) {
+    if (e.type === 'chat-message') {
+      const panel = events.find((x) => x.id === e.chat && x.type === 'chat');
+      if (!panel) errors.push(`events[${e.order}] (${e.id}).chat: unknown chat ${e.chat}`);
+      else if (e.start < panel.start || e.start >= panel.end)
+        errors.push(`events[${e.order}] (${e.id}).at: outside chat ${e.chat}`);
+      else e.end = panel.end;
+    }
     if (e.type === 'alert' && e.corrects) {
       const prior = events.find((x) => x.id === e.corrects);
       if (prior && prior.start >= e.start)
@@ -392,7 +418,7 @@ export function compile(scenario: Scenario, regionIds: Set<string>): Timeline {
       errors.push(`cuts (${cut.id}).clockTransition: requires a previous cut`);
   }
   // Single-owner tracks cannot have ambiguous concurrent values. Independent layers can overlap.
-  for (const type of ['camera', 'inset', 'news', 'status', 'bulletin', 'legend'] as const) {
+  for (const type of ['camera', 'inset', 'news', 'status', 'bulletin', 'legend', 'chat'] as const) {
     const track = events.filter((e) => e.type === type).sort((a, b) => a.start - b.start);
     for (let i = 1; i < track.length; i++)
       if (track[i].start < track[i - 1].end)

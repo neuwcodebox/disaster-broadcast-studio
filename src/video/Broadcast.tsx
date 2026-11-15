@@ -6,6 +6,7 @@ import { FPS } from '../scenario.js';
 import type { Regions } from '../load.js';
 import { stateAt, clock, envelope, receiptHighlights, shutdownAt } from '../timeline.js';
 import { AlertHistory } from './Alerts.js';
+import { ChatPanel } from './Chat.js';
 import { BroadcastMap } from './Map.js';
 import { SignalEffects, signalLevels } from './SignalEffects.js';
 import { AudioTrack } from './AudioTrack.js';
@@ -181,9 +182,14 @@ export function Broadcast(props: BroadcastProps) {
             borderLeft: '1px solid #495159',
             background: '#0c1012',
             overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          <AlertHistory timeline={timeline} frame={state.contentFrame} />
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <AlertHistory timeline={timeline} frame={state.contentFrame} />
+          </div>
+          {state.chat && <ChatPanel timeline={timeline} chat={state.chat} frame={state.contentFrame} />}
         </aside>
         {[bulletins.previous, bulletins.current].map(
           (bulletin, i) =>

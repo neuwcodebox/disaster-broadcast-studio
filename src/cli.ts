@@ -81,6 +81,7 @@ program
           camera: state.camera,
           visible: state.visible,
           alerts: state.alerts,
+          chat: state.chat,
           warnings,
         },
         null,
