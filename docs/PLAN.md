@@ -4,7 +4,7 @@
 
 <!-- 구현 상태와 검증 범위를 구분하고 다음 작업을 유지한다. -->
 
-- **단계:** 첫 사용 범위 P1~P6 구현·로컬 출력 확인 완료.
+- **단계:** 첫 사용 범위 P1~P6 구현·로컬 출력 확인 및 1차 유지보수 정리 완료.
 - **확인 범위:** 프레임 출력, 서로 다른 두 외부 입력의 전체 H.264/AAC MP4, 1080p 60fps, 구간·전체의 시간·카메라·음향, 빈 외부 폴더의 패키지 설치·스킬 복사, 새 연출 기능과 독립 단편 전체 출력, 문자 수신·동시 발송·시간 도약 경계, Tone.js WAV 생성·로컬 샘플·시드 재현·실패 정리, 지도 채우기/윤곽선 중첩·범례, 외부 작품 초기화·충돌 보호, 공통 설치 도구의 격리 Git 설치·갱신, 선택적 화면 후처리, 공통 수신음·수신 지역 강조·시계 전환·상태 진입·송출 종료 연출.
 - **실행 환경:** Linux x64, Node.js 24.22.1, Chrome Headless Shell 158, 소프트웨어 WebGL `swangle`. Windows/macOS는 직접 실행하지 않았다.
 - **배포:** GitHub main의 소스와 `npm pack` 배포물. 독립 작품과 재현 파일은 개발 저장소 밖에서 제작했다. 공개 npm 게시·영상 외부 업로드는 하지 않았다.
@@ -20,11 +20,18 @@
 | P5 다작품·외부 사용 | F1~F6, N1~N4 | 엔진 변경 없이 서로 다른 외부 데이터 출력 | 외부 설치본 검증·전체·구간 출력 |
 | P6 독립 완성 작품 | F1~F6, N1~N4 | 외부 설치본으로 5분 10초 허구 단편·재현 파일 제작 | 전체 MP4의 실제 프레임·미디어·음향 확인 |
 
-실행 명령·환경 보정·남은 플랫폼 범위는 [첫 구현 이력](history/2026-11-14-first-release.md), 정밀 지도·레이아웃·글꼴 확인은 [화면 개선 이력](history/2026-11-15-map-and-layout.md)에 기록했다. 상태 표시·창작 지원·독립 작품 확인은 [제작 완성 이력](history/2026-11-15-status-and-production.md)에 기록했다. Tone.js 음원 생성·지도 중첩·최신순 이력과 독립 작품 갱신은 [음원·지도 이력](history/2026-11-15-audio-and-overlays.md)에 기록했다. 작품 초기화·공통 스킬 설치·문안·후처리는 [창작 작업공간 이력](history/2026-11-15-authoring-workspace.md)에 기록했다. 현재 사용법은 [README](../README.md)와 배포용 [파일 형식·CLI](../skills/scenario-writing/references/format.md)를 따른다.
+현재 사용법은 [README](../README.md)와 배포용 [파일 형식·CLI](../skills/scenario-writing/references/format.md)를 따른다. 주요 판단과 검증 범위는 작업별 이력에서 확인한다.
 
-수신·시간·결말 연출과 작품 범위 점검은 [연출 개선 이력](history/2026-11-15-arrival-and-time.md)에 기록했다.
-
-지도 수신 강조의 깜빡임 수정·시계 전환·반복 수신 결말은 [지도·전환 개선 이력](history/2026-11-15-stable-map-and-clock.md)에 기록했다.
+| 작업 | 기록 |
+| --- | --- |
+| 첫 구현·외부 작품·실행 환경 | [첫 구현](history/2026-11-14-first-release.md) |
+| 정밀 지도·레이아웃·글꼴 | [화면 개선](history/2026-11-15-map-and-layout.md) |
+| 상태 표시·창작 지원·완성 작품 | [제작 완성](history/2026-11-15-status-and-production.md) |
+| 음원 생성·지도 중첩·문자 이력 | [음원·지도](history/2026-11-15-audio-and-overlays.md) |
+| 작품 초기화·스킬 설치·후처리 | [창작 작업공간](history/2026-11-15-authoring-workspace.md) |
+| 수신·시간·결말 연출 | [연출 개선](history/2026-11-15-arrival-and-time.md) |
+| 지도 안정성·시계 전환 | [지도·전환 개선](history/2026-11-15-stable-map-and-clock.md) |
+| 책임 분리·출력 보호·회귀 테스트·README | [1차 마무리](history/2026-11-15-refactoring-and-handoff.md) |
 
 ## 다음 작업
 

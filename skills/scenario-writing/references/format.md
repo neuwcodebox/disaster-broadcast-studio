@@ -17,7 +17,7 @@ npx dbs credits scenario.yaml --out description-credits.txt
 
 프레임은 0부터, 구간 끝은 포함한다. 300~599는 60fps에서 5초다. `inspect`는 해당 프레임의 이야기 시각·카메라·활성 연출·문자 이력을 렌더 없이 반환한다. `regions`는 내장 대한민국 시군구 ID와 이름을 검색한다. 코드를 추측하거나 옛 행정코드를 기억으로 넣지 않는다. 예를 들어 `dbs regions --search 철원`의 결과는 `51780 철원군`이다. `--json`으로 목록을 읽고 문자열 ID를 사용한 뒤 `dbs validate scenario.yaml`로 실제 경계와 대조한다. 내장 목록은 SGIS/admdongkor 2026-07-01 경계를 시군구로 병합한 것이다. 북한의 배경 육지는 시군구 선택 목록이 아니다. 사용자 GeoJSON을 쓰면 그 파일의 Feature ID를 읽어 사용한다. `schema`의 JSON Schema가 정확한 필드 계약이다.
 
-`--browser`로 Chromium 경로를 지정할 수 있다. 생략하면 Remotion이 Chrome Headless Shell을 관리하며 최초 설치에 인터넷이 필요하다. 이후 렌더는 로컬 자산만 사용한다. Linux 소프트웨어 렌더는 `--gl swangle`, GPU는 기본 `angle`이다. `--concurrency` 기본값은 2다. `--overwrite` 없이 기존 결과를 덮어쓰지 않는다. 실패 시 종료코드 1과 입력 위치를 반환한다.
+`--browser`로 Chromium 경로를 지정할 수 있다. 생략하면 Remotion이 Chrome Headless Shell을 관리하며 최초 설치에 인터넷이 필요하다. 이후 렌더는 로컬 자산만 사용한다. Linux 소프트웨어 렌더는 `--gl swangle`, GPU는 기본 `angle`이다. `--concurrency` 기본값은 2다. `--overwrite` 없이 기존 결과와 부속 `.json`·`.credits.txt`를 덮어쓰지 않는다. 실패 시 종료코드 1과 입력 위치를 반환한다.
 
 영상과 프레임 옆 `.json`은 작품·프레임 범위·자산 출처를 기록하고, `.credits.txt`는 게시용 출처 문안이다. 지도 출처를 화면에 상시 표시하지 않으므로 유튜브 설명란 등에 이 문안을 포함한다. 동봉 지도에 적용되는 출처·제공자·라이선스·가공 내용과 작품 음원 정보를 보존한다. 사용자 자산이 화면 내 표기를 요구하면 그 조건도 별도로 충족한다.
 

@@ -46,5 +46,13 @@
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neuwcodebox/disaster-broadcast-studio.git"
+  },
+  "homepage": "https://github.com/neuwcodebox/disaster-broadcast-studio#readme",
+  "bugs": {
+    "url": "https://github.com/neuwcodebox/disaster-broadcast-studio/issues"
+  }
 }
