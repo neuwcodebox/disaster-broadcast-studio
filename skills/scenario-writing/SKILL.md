@@ -15,7 +15,7 @@ description: 재난방송실을 이용하는 창작 AI가 한국형 재난방송
 
 [창작 근거 자료](references/README.md)에서 필요한 종류를 선택한다. 모든 자료를 무조건 읽기보다 장면에 필요한 발령 체계·기관·문안을 찾아 원천 근거까지 확인한다.
 
-- [재난문자 운영·발송 기준](references/disaster-sms-rules.md): 사용기관, 시간대, 매체, 직접 발송 권한.
+- [재난문자 운영·발송 기준](references/disaster-sms-rules.md): 사용기관·직접 발송 권한, 기관별 표준문안 위치, 최신 호우·지진 문자 기준과 실종경보 구분.
 - [표준문안 전문](references/disaster-sms-templates.md): 해당 재난 유형과 행동 단계에 맞는 실제 문장.
 - [민방위 경보](references/civil-defense.md): 발령·전달, 사이렌·방송·자막·문자 사이의 차이.
 - [기상·지진·홍수·산사태 정보](references/hazard-information.md): 시간·단계·관측값의 의미.
