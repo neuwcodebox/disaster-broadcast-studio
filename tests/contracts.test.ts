@@ -157,6 +157,7 @@ test('status text and colors are authored verbatim and restore on direct seek', 
 });
 test('broadcast notices, optional marker captions, and geographic overlay contracts', () => {
   const x: any = input();
+  x.agencies.operator = '현황판 운영팀';
   x.events.push(
     {
       id: 'b1',
@@ -164,9 +165,9 @@ test('broadcast notices, optional marker captions, and geographic overlay contra
       cut: 'first',
       at: 0,
       duration: 3,
-      source: 'city',
-      heading: '안내',
-      text: '내용',
+      source: 'operator',
+      heading: '수신 지연 안내',
+      text: '문자 수집 지연으로 최신 정보 반영이 늦어지고 있습니다.',
     },
     { id: 'p1', type: 'marker', cut: 'first', at: 0, duration: 3, position: [127, 36] },
     {

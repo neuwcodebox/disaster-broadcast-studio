@@ -14,6 +14,7 @@ import { Bulletin } from './Bulletin.js';
 import { useBundledFonts } from './useBundledFonts.js';
 import { bodyFont, numberFont } from './fonts.js';
 import { News, Status } from './Information.js';
+import { Legend } from './Legend.js';
 import { changeProgress, transitionAt } from './transitions.js';
 import { layout } from './layout.js';
 import { TimeJump, timeJumpStrength } from './TimeJump.js';
@@ -117,36 +118,7 @@ export function Broadcast(props: BroadcastProps) {
               frame={state.contentFrame}
             />
             {legend?.type === 'legend' && (
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 24,
-                  bottom: 24,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                  background: '#0b0e10ed',
-                  padding: '14px 18px',
-                  fontSize: 30,
-                  color: '#d0d5da',
-                  opacity: changeProgress(state.contentFrame, legend.start),
-                  transform: `translateY(${10 * (1 - changeProgress(state.contentFrame, legend.start))}px)`,
-                }}
-              >
-                {legend.items.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span
-                      style={{
-                        width: 23,
-                        height: item.symbol === 'line' ? 0 : 16,
-                        background: item.symbol === 'fill' ? item.color : 'transparent',
-                        border: item.symbol === 'fill' ? 'none' : `2px solid ${item.color}`,
-                      }}
-                    />
-                    <span>{item.text}</span>
-                  </div>
-                ))}
-              </div>
+              <Legend event={legend} frame={state.contentFrame} />
             )}
             {inset?.type === 'inset' && (
               <div

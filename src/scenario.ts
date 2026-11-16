@@ -175,6 +175,9 @@ const legend = z
   .object({
     ...span,
     type: z.literal('legend'),
+    layout: z.enum(['list', 'colorbar']).default('list'),
+    position: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right']).optional(),
+    unit: z.string().trim().min(1).max(16).regex(/^[^\r\n]+$/, 'Use a single line').optional(),
     items: z.array(
       z
         .object({
@@ -185,7 +188,21 @@ const legend = z
         .strict(),
     ),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.layout !== 'colorbar') {
+      if (value.unit) ctx.addIssue({ code: 'custom', path: ['unit'], message: 'unit requires layout: colorbar' });
+      return;
+    }
+    if (value.items.length < 1 || value.items.length > 32)
+      ctx.addIssue({ code: 'custom', path: ['items'], message: 'Use 1–32 colorbar steps' });
+    value.items.forEach((item, index) => {
+      if (item.text.length > 12 || /[\r\n]/.test(item.text))
+        ctx.addIssue({ code: 'custom', path: ['items', index, 'text'], message: 'Use a single label of at most 12 characters' });
+      if (item.symbol !== 'fill')
+        ctx.addIssue({ code: 'custom', path: ['items', index, 'symbol'], message: 'Colorbar steps require fill symbols' });
+    });
+  });
 const marker = z
   .object({
     ...span,

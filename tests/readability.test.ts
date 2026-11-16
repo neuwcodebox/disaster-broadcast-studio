@@ -11,7 +11,7 @@ import { Bulletin } from '../src/video/Bulletin.js';
 
 const input = () => ({
   version: 1, title: '모바일 가독성 검증', fictionNotice: '허구 화면',
-  agencies: { source: '시험방송' },
+  agencies: { source: '시험방송', operator: '현황판 운영팀' },
   map: { camera: { center: [127.5, 36], zoom: 6 } },
   cuts: [{ id: 'one', duration: 50, storyTime: '2026-01-01T12:00:00+09:00' }],
   events: [
@@ -23,7 +23,7 @@ const input = () => ({
     { id: 'message', type: 'chat-message', cut: 'one', at: 5, chat: 'panel',
       author: '시청자', text: '문자 이제 왔어요. 일단 창문 닫았습니다. 가족들도 안에서 기다리고 있어요.' },
     { id: 'notice', type: 'bulletin', cut: 'one', at: 5, duration: 40,
-      source: 'source', heading: '방송 안내', text: '주민께서는 실내에 머무르며 지역별 후속 안내를 확인해 주시기 바랍니다.' },
+      source: 'operator', heading: '수신 지연 안내', text: '문자 수집 지연으로 최신 정보 반영이 늦어지고 있습니다. 복구 후 갱신을 재개하겠습니다.' },
   ] as Record<string, unknown>[],
 });
 
@@ -36,7 +36,7 @@ test('every message displays its full body without automatic paging or generated
       [renderToStaticMarkup(React.createElement(AlertHistory, { timeline, frame })), input().events[0].text],
       [renderToStaticMarkup(React.createElement(News, { timeline, frame })), input().events[1].headline],
       [renderToStaticMarkup(React.createElement(ChatPanel, { timeline, frame, chat: stateAt(timeline, frame).chat! })), input().events[3].text],
-      [renderToStaticMarkup(React.createElement(Bulletin, { event: notice, source: '시험방송' })), input().events[4].text],
+      [renderToStaticMarkup(React.createElement(Bulletin, { event: notice, source: '현황판 운영팀' })), input().events[4].text],
     ];
     for (const [html, body] of views) {
       assert.ok(String(html).includes(String(body)));

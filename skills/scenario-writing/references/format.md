@@ -89,7 +89,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | `alert` | `sender`, `text`, `level?`, `regions?`, `occurredAt?`, `publishedAt?`, `mapHighlight?`, `sound?` | 수신 이후 최신순 이력에 남는다. 본문 최대 120자. duration/carry 없음 |
 | `news` | `duration`, `source`, `headline`, `publishedAt?`, `sound?`, `carry?` | 하단 뉴스. 기본 무음. 동시 1개. 최대 64자 |
 | `status` | `duration`, `items: [{text, color}]`, `sound?`, `carry?` | 상단 상태 박스 전체. 동시 1개 |
-| `bulletin` | `duration`, `source`, `heading`, `text`, `color?`, `sound?`, `carry?` | 지도·문자 부분을 덮는 방송 안내. 시계·상태·하단 뉴스 유지. 제목 최대 40자, 본문 최대 180자. 동시 1개 |
+| `bulletin` | `duration`, `source`, `heading`, `text`, `color?`, `sound?`, `carry?` | 현황판 관리자의 서비스 공지. 지도·문자 부분을 덮고 시계·상태·하단 뉴스 유지. 제목 최대 40자, 본문 최대 180자. 동시 1개 |
 
 ### 재난문자와 문안 길이
 
@@ -100,6 +100,26 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 모든 문안은 전문을 한 번에 보여준다. 문자·뉴스·방송 안내·채팅에 자동 페이지 전환이나 페이지 번호를 붙이지 않는다. 문자 최대 120자, 뉴스 최대 64자, 방송 안내 본문 최대 180자, 채팅 최대 80자는 이 엔진의 화면 구성 한도이며 실제 문자 발송 제도의 법정 한도를 뜻하지 않는다. 명시적 개행이 많아 화면을 넘기는 문안과 발신자 접두사를 포함해 너무 긴 문자도 검증 오류다. 문장이 길면 필요한 행동과 사실을 중심으로 간결하게 고친다. 화면에 더 많은 정보를 넣으려고 글자를 줄이지 않는다.
 
 문자 읽기 경고는 최소 8초와 초당 8자를 기준으로 수신 후 다음 문자 또는 영상 끝까지의 시간을 확인한다. 발신자·본문·등급이 같은 연속 반복 문자는 읽기 간격 경고에서 제외한다. `validate`의 경고를 확인하고 중요한 문자 사이에 읽을 시간을 둔다. 모바일 확인은 16:9 가로 전체화면을 기준으로 하며 실제 출력과 854×480 축소본에서 핵심 지시가 읽히는지 검토한다.
+
+### 방송 안내
+
+`bulletin`은 현황판 관리자가 시청자에게 알리는 서비스 공지다. `source`에는 `agencies`에 등록한 현황판 관리자·운영팀의 ID를 지정한다. 수신 지연·점검·송출 중단·재개 등 운영 사항을 작성하며, 지자체·정부·현장기관의 주민 행동요령과 위험 안내는 해당 기관의 `alert`로 전달한다. 기관 발표를 큰 화면으로 보여주려고 `bulletin`으로 옮기지 않는다.
+
+```yaml
+agencies:
+  operator: 현황판 운영팀
+events:
+  - id: reception-delay
+    type: bulletin
+    cut: opening
+    at: 5
+    duration: 10
+    source: operator
+    heading: 수신 지연 안내
+    text: 문자 수집 지연으로 최신 정보 반영이 늦어지고 있습니다. 복구 후 갱신을 재개하겠습니다.
+```
+
+기존 작품의 `agencies`·`events`에 합치고 컷 ID와 길이를 맞추는 계약 예시다.
 
 ### 기본 화면 전환
 
@@ -169,7 +189,7 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 | `type` | 추가 필드 | 동작 |
 | --- | --- | --- |
 | `region` | `duration`, `regions`, `color?`, `fillOpacity?`, `strokeColor?`, `strokeOpacity?`, `strokeWidth?`, `label?`, `pulse?`, `fadeIn?`, `fadeOut?`, `carry?` | 실제 행정구역 강조. 색 기본 `#b9615b`, pulse 기본 false |
-| `legend` | `duration`, `items: [{text, color, symbol?}]`, `carry?` | 지도 하단 범례. symbol은 fill(기본)/outline/line. 동시 1개 |
+| `legend` | `duration`, `items: [{text, color, symbol?}]`, `layout?`, `position?`, `unit?`, `carry?` | 항목 목록 또는 세로 색상 막대 범례. layout은 list(기본)/colorbar. symbol은 fill(기본)/outline/line. 동시 1개 |
 | `marker` | `duration`, `position`, `color?`, `label?`, `effect?`, `carry?` | 지점·확대 후 멈추는 링·반복 확산 링. effect는 point(기본)/ring/pulse |
 | `zone` | `duration`, `points`, `color?`, `opacity?`, `carry?` | 행정구역과 다른 작품상의 영역. 처음·끝 좌표가 같은 닫힌 링, 최소 4점. opacity 기본 0.18 |
 | `grid` | `duration`, `asset`, `opacity?`, `fadeIn?`, `fadeOut?`, `carry?` | 로컬 JSON의 지리 격자를 색면으로 표시. opacity 기본 0.6, 페이드 기본 0. 병렬 중첩 가능 |
@@ -185,6 +205,31 @@ YAML/JSON을 사용한다. 알 수 없는 필드와 중복 YAML 키는 오류다
 문자는 `regions`에 지정된 영역의 채우기를 수신 시 기본 2.4초 동안 3회 부드럽게 점멸한다. 테두리는 유지하며 각 점멸은 채우기가 나타났다가 사라지는 형태다. 기본 지도는 이 효과의 시작·종료에 따라 다시 그리지 않는다. `mapHighlight: {duration: 3, color: '#d6e2ec'}`로 바꾸거나 `mapHighlight: false`로 끈다. 빈 지역 목록은 강조하지 않는다. 이 효과는 짧은 수신 표시이며 지속적인 발송 이력 채우기·위기경보 경계는 별도 `region`으로 작성한다. 엔진이 기관명에서 발송 범위를 추측하지 않는다.
 
 기관명은 발송 대상과 다를 수 있다. 도청이 특정 시군만 대상으로 보내면 본문에 그 시군을 명시하고 그 코드만 지정한다. ‘도 전역’ 문자는 내장 목록에서 도 소속 시군 전체를 조회해 포함한다. 모든 문자에서 본문 대상·`regions`·지속 지도 표시를 대조한다. 의도적인 불일치는 작성 근거를 작품 기록에 남기며 `mapHighlight: false`와 별도 지도 이벤트로 표현할 수 있다. 지역 강조·지점·영역·선은 여러 개를 병렬로 사용할 수 있다.
+
+### 범례 표시
+
+`legend.layout: list`는 색상·기호와 설명을 나열하며 기본 위치는 지도 왼쪽 아래다. `layout: colorbar`는 그리드의 수치 분포에 어울리는 좁은 세로 색상 막대이며 기본 위치는 오른쪽 위다. `position`은 두 방식 모두 `top-left`·`top-right`·`bottom-left`·`bottom-right`로 지정할 수 있다. 보조 지도와 겹치면 위치를 조정한다.
+
+색상 막대의 `items`는 1~32개이며 작성한 순서대로 위에서 아래로 붙여 표시한다. 각 항목은 같은 높이의 색상 구간과 오른쪽 라벨로 구성한다. 라벨은 개행 없이 최대 12자이며, 기호는 `fill`만 사용한다. `unit`은 막대 아래에 표시하는 선택적 단위로 개행 없이 최대 16자이고 `colorbar`에서만 사용한다. 색상·수치·단위는 작성자가 자료의 기준에 맞춘다. 엔진은 수치 정렬·구간 비례·그라데이션·그리드 값 추출을 수행하지 않는다.
+
+아래는 그리드 생성 예제와 같은 팔레트의 합성 분포 범례다. 수치는 실측값이 아닌 정규화된 합성 강도의 구간 하한이다.
+
+```yaml
+- id: field-scale
+  type: legend
+  cut: opening
+  at: 5
+  duration: 15
+  layout: colorbar
+  unit: 합성 강도
+  items:
+    - {text: '0.83', color: '#c55364'}
+    - {text: '0.67', color: '#df9852'}
+    - {text: '0.50', color: '#d5cb4d'}
+    - {text: '0.33', color: '#45b96e'}
+    - {text: '0.17', color: '#31a6cd'}
+    - {text: '0.12', color: '#4564b9'}
+```
 
 ### 영역·반경·이동 경로
 
@@ -244,7 +289,7 @@ events:
   - {id: field-later, type: grid, cut: opening, at: 15, duration: 5, asset: field-later}
 ```
 
-표시 시점마다 별도 파일을 준비하고 이전 이벤트의 종료와 다음 이벤트의 시작을 맞춰 교체한다. 겹치는 구간에는 타임라인 순서대로 합성한다. 셀의 알파에 이벤트 `opacity`와 페이드가 곱해진다. 자동 보간이나 수치·지점명·격자선·범례는 생성하지 않는다. 필요한 범례는 기존 `legend`로 별도 작성한다. 색면은 지역 강조·선·마커 아래에 놓이며 메인·보조 지도에서 각각 같은 지리 좌표로 투영된다. 시간 도약 중에는 이전 색면을 유지하고 임의 탐색에서도 해당 시점의 파일을 복원한다.
+표시 시점마다 별도 파일을 준비하고 이전 이벤트의 종료와 다음 이벤트의 시작을 맞춰 교체한다. 겹치는 구간에는 타임라인 순서대로 합성한다. 셀의 알파에 이벤트 `opacity`와 페이드가 곱해진다. 자동 보간이나 수치·지점명·격자선·범례는 생성하지 않는다. 필요한 범례는 `legend`로 별도 작성하며, 수치 분포에는 [세로 색상 막대](#범례-표시)를 사용할 수 있다. 색면은 지역 강조·선·마커 아래에 놓이며 메인·보조 지도에서 각각 같은 지리 좌표로 투영된다. 시간 도약 중에는 이전 색면을 유지하고 임의 탐색에서도 해당 시점의 파일을 복원한다.
 
 큰 배열은 직접 나열하기보다 코드로 생성한다. [실행 예제](../examples/grid.mjs)를 작품 폴더의 `src/maps/grid.mjs`로 복사해 수정할 수 있다. 이 예제는 동일한 범위에서 시간에 따라 달라지는 합성 색면을 만들며 기존 파일을 덮어쓰지 않는다.
 
