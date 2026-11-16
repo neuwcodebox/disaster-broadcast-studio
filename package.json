@@ -1,6 +1,6 @@
 {
   "name": "disaster-broadcast-studio",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Render text-authored Korean disaster broadcast fiction into deterministic videos.",
   "type": "module",
   "bin": {
