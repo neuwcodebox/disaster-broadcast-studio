@@ -1,4 +1,5 @@
 import React from 'react';
+import { interpolateColors } from 'remotion';
 import type { Timeline, CompiledEvent } from '../scenario.js';
 import { alertText } from '../scenario.js';
 import { stateAt, clock } from '../timeline.js';
@@ -22,7 +23,6 @@ function AlertCard({
 }) {
   if (event.type !== 'alert') return null;
   const arrival = changeProgress(frame, event.start);
-  const latest = emphasis > 0;
   const received = stateAt(timeline, event.start).epoch;
   return (
     <div style={{ display: 'grid', gridTemplateRows: `${arrival}fr` }}>
@@ -38,7 +38,7 @@ function AlertCard({
               .toString(16)
               .padStart(2, '0')}`,
             borderBottom: '1px solid #343a3f',
-            background: latest ? '#131719' : '#0e1214',
+            background: interpolateColors(emphasis, [0, 1], ['#0e1214', '#131719']),
             borderLeft: `2px solid ${colors[event.level]}`,
           }}
         >
@@ -88,12 +88,11 @@ function AlertCard({
               whiteSpace: 'pre-wrap',
               wordBreak: 'normal',
               overflowWrap: 'anywhere',
-              color: latest ? '#edf0f2' : '#c0c9d0',
+              color: interpolateColors(emphasis, [0, 1], ['#c0c9d0', '#edf0f2']),
             }}
           >
             {alertText(timeline.scenario.agencies[event.sender], event.text)}
           </div>
-
         </article>
       </div>
     </div>

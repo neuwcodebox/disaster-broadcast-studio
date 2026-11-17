@@ -4,6 +4,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { scenarioSchema, compile } from '../src/scenario.js';
 import { AlertHistory } from '../src/video/Alerts.js';
+import { changeFrames } from '../src/video/transitions.js';
 
 const timeline = compile(
   scenarioSchema.parse({
@@ -86,4 +87,58 @@ test('older messages retain their distinct severity badge and border colors', ()
     assert.ok(card.includes(`border:1px solid ${color}`));
     assert.ok(card.includes(`color:${color}`));
   }
+});
+
+const cardAppearance = (frame: number, text: string) => {
+  const markup = renderToStaticMarkup(React.createElement(AlertHistory, { timeline, frame }));
+  const card = markup.match(/<article\b[\s\S]*?<\/article>/g)!.find((html) => html.includes(text))!;
+  const bodyStyle = card.match(/<div style="([^"]*)">\[시험시\]/)![1];
+  const channels = (value: string) => value.startsWith('#')
+    ? value.slice(1).match(/../g)!.map((channel) => parseInt(channel, 16))
+    : value.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+  return {
+    background: channels(card.match(/(?:"|;)background:([^;]+)/)![1]),
+    color: channels(bodyStyle.match(/(?:^|;)color:([^;]+)/)![1]),
+    fontSize: Number(bodyStyle.match(/font-size:([\d.]+)px/)![1]),
+  };
+};
+
+test('outgoing latest card fades continuously with no color snap at the end of insertion', () => {
+  const start = 240;
+  const before = cardAppearance(start - 1, '이전 문자');
+  const settled = cardAppearance(start + changeFrames, '이전 문자');
+  assert.deepEqual(cardAppearance(start, '이전 문자'), before);
+  assert.deepEqual(before.background, [19, 23, 25]);
+  assert.deepEqual(before.color, [237, 240, 242]);
+  assert.deepEqual(settled.background, [14, 18, 20]);
+  assert.deepEqual(settled.color, [192, 201, 208]);
+
+  let previous = before;
+  for (let frame = start + 1; frame <= start + changeFrames; frame++) {
+    const current = cardAppearance(frame, '이전 문자');
+    for (const property of ['background', 'color'] as const) {
+      for (let channel = 0; channel < 3; channel++) {
+        const drop = previous[property][channel] - current[property][channel];
+        const total = before[property][channel] - settled[property][channel];
+        assert.ok(drop >= 0 && drop <= Math.ceil(total / 4), `${property} jumps at frame ${frame}`);
+      }
+    }
+    assert.ok(current.fontSize <= previous.fontSize);
+    previous = current;
+  }
+});
+
+test('arrival emphasis stays on the newest card and never re-highlights settled history', () => {
+  const settledHistory = cardAppearance(359, '이전 문자');
+  for (let frame = 360; frame <= 360 + changeFrames; frame++) {
+    const latest = cardAppearance(frame, '동시 문자 둘');
+    assert.deepEqual(latest.background, [19, 23, 25]);
+    assert.deepEqual(latest.color, [237, 240, 242]);
+    assert.equal(latest.fontSize, 40);
+    assert.deepEqual(cardAppearance(frame, '이전 문자'), settledHistory);
+    assert.equal(cardAppearance(frame, '동시 문자 하나').fontSize, 32);
+  }
+  const firstSeek = cardAppearance(250, '이전 문자');
+  cardAppearance(1800, '이전 문자');
+  assert.deepEqual(cardAppearance(250, '이전 문자'), firstSeek);
 });
