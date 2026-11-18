@@ -82,6 +82,35 @@ test('bundled WAVs match cue durations, have headroom and increasing alert RMS',
   assert.ok(rms.bulletin > rms.news * 1.5, 'bulletin should be more prominent than news');
 });
 
+test('every bundled sound pulse settles into silence without an abrupt cutoff', async () => {
+  const pulseEnds = {
+    '안전안내': [0.22, 0.5],
+    '긴급재난': [0.65, 1.48, 2.31],
+    '위급재난': [0.42, 0.96, 1.5, 4.05],
+    status: [0.1, 0.24],
+    news: [0.22],
+    bulletin: [0.3, 0.9],
+  };
+  for (const key of Object.keys(defaultSounds) as (keyof typeof defaultSounds)[]) {
+    const wav = await readFile(new URL(`../assets/audio/${defaultSounds[key].file}`, import.meta.url));
+    const sampleRate = wav.readUInt32LE(24);
+    const sample = (frame: number) => wav.readInt16LE(44 + frame * 2);
+    assert.equal(sample(0), 0, `${key}: starts at zero`);
+    assert.equal(sample((wav.length - 44) / 2 - 1), 0, `${key}: ends at zero`);
+    for (const end of pulseEnds[key]) {
+      const frame = Math.round(end * sampleRate);
+      const label = `${key} at ${end}s`;
+      let tailPeak = 0;
+      for (let i = frame - Math.round(0.002 * sampleRate); i < frame; i++)
+        tailPeak = Math.max(tailPeak, Math.abs(sample(i)));
+      assert.ok(tailPeak / 32768 < 0.002, `${label}: last 2ms settle below -54dBFS`);
+      assert.ok(Math.abs(sample(frame - 1)) <= 1, `${label}: reaches zero before stopping`);
+      for (let i = frame; i < frame + Math.round(0.005 * sampleRate); i++)
+        assert.equal(sample(i), 0, `${label}: silence after pulse`);
+    }
+  }
+});
+
 test('silent news loads no sound or credit; explicit news sound opts in to both', async () => {
   const dir = await mkdtemp('/tmp/dbs-sounds-');
   try {
